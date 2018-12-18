@@ -1,5 +1,5 @@
 /*********************
- * Arduino Uno or Trinket Pro 5V w/ 
+ * Arduino Uno or Trinket Pro 5V w/
  * MonoLCD Shield
  * MPL115A2 Temp and Pressure Sensor
  * 2 x DHT22 Temp and Humidity Sensors
@@ -9,7 +9,7 @@
 
 #include <Wire.h>
 #include <Adafruit_MPL115A2.h>       //Barometric and Temp Sensor
-#include <Adafruit_MCP23017.h>       //LCD Shield Parallel to Serial 
+#include <Adafruit_MCP23017.h>       //LCD Shield Parallel to Serial
 #include <Adafruit_RGBLCDShield.h>   //AdaFruit Library for LCD Shield w/ Buttons
 #include "DHT.h"                     //DHT22 Humidity and Temp Sensors
 #include "Adafruit_FRAM_I2C_Plus.h"       //FRAM chip I/O plus lib
@@ -29,6 +29,7 @@
 #define FIELD_WIDTH 10
 
 //Define fixed FRAM addresses manually calculated based off field width size
+//need to create class to do this more dynamically
 #define FRAM_ADDR_RESERV_0 0x0
 #define FRAM_ADDR_RESERV_1 0x1
 #define FRAM_ADDR_RESERV_2 0x2
@@ -85,13 +86,13 @@ bool hrlyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData &
 bool dailyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData &sensorDataRd );
 //bool printtoLCD( uint16_t framReadAddress );
 /* +*-+-----+------+---------+--------+---------+----------+---------+---------+
- Begin Setup of arduino and 
- all sensors and libraries 
+ Begin Setup of arduino and
+ all sensors and libraries
  +-------+-------+--------+---------+--------+----------+--------+-----------*+ */
 
 void setup() {
   Serial.begin(9600);		// Debugging output
-  lcd.begin(16, 2);			// set up the LCD's number of columns and rows: 
+  lcd.begin(16, 2);			// set up the LCD's number of columns and rows:
   //lcd.setBacklight(ON);
 
   mpl115a2.begin();
@@ -109,27 +110,27 @@ void setup() {
 
   //Read the first byte
   uint16_t test = fram.read16(0x0);
-  Serial.print("Restarted "); 
-  Serial.print(test); 
+  Serial.print("Restarted ");
+  Serial.print(test);
   Serial.println(" times");
   //Test write ++
-  fram.write16(0x0, test+1);
+  //fram.write16(0x0, test+1);
 
   Serial.println("Setup Complete. First I/O in 60 Seconds....");
   //delay( 250 );
 }
 
 /* +*-+-----+------+---------+--------+---------+----------+---------+---------+
- Begin Looping continuous code for 
+ Begin Looping continuous code for
  arduino and all sensors and libraries
  +-------+-------+--------+---------+--------+----------+--------+-----------*+ */
 
 void loop() {
-  /* General Functionality is to grab sensor data ~ every 15 mins, store 1hr of 15 min interval data in the first array in FRAM, 
+  /* General Functionality is to grab sensor data ~ every 15 mins, store 1hr of 15 min interval data in the first array in FRAM,
    24 hrs of hourly averaged data in second array in FRAM and daily averages to Third long term array in FRAM.
    With conditions placed on user input buttons for display print.
-   FRAM storage will need some tracking for eventual overwrite on rollover (pointers) and for readout 
-   to UI menus 
+   FRAM storage will need some tracking for eventual overwrite on rollover (pointers) and for readout
+   to UI menus
    */
 
   sensorData sensorDataWr;
@@ -182,35 +183,10 @@ void loop() {
     Serial.println(minute());
     readField( sensorDataRd, framReadAddress );
 
-    lcd.setBacklight(ON);
-    lcd.clear();
-    lcd.setCursor(0,0);
-    lcd.print(sensorDataRd.humy1);
-    lcd.print("%");
-    lcd.setCursor(4,0);
-    lcd.print(sensorDataRd.ftmp1);
-    lcd.print("F");
-    lcd.setCursor(8,0);
-    lcd.print(sensorDataRd.humy2);
-    lcd.print("%");
-    lcd.setCursor(12,0);
-    lcd.print(sensorDataRd.ftmp2);
-    lcd.print("F");
-    lcd.setCursor(0,1);
-    lcd.print(sensorDataRd.pressurehPa);
-    lcd.print("P");
-    lcd.setCursor(6,1);
-    lcd.print(sensorDataRd.ftmp0);
-    lcd.print("F");
-    lcd.setCursor(12,1);
-    lcd.print("MENU");
+    screenUpdate();
 
-    if ( buttons == false ) {  
-      if ( millis() - lcdpreviousMillis > lcdInterval ) {    //need abs()?
-        lcdpreviousMillis = millis();
-        lcd.setBacklight(OFF);
-      }
-    }
+    lcdTimeOut();
+
   }
 
   if ( buttons ) {
@@ -220,36 +196,12 @@ void loop() {
     Serial.println(fram.read16( framReadAddress ), HEX);
     readField( sensorDataRd, framReadAddress );
 
-    lcd.setBacklight(ON);
-    lcd.clear();
-    lcd.setCursor(0,0);
-    lcd.print(sensorDataRd.humy1);
-    lcd.print("%");
-    lcd.setCursor(4,0);
-    lcd.print(sensorDataRd.ftmp1);
-    lcd.print("F");
-    lcd.setCursor(8,0);
-    lcd.print(sensorDataRd.humy2);
-    lcd.print("%");
-    lcd.setCursor(12,0);
-    lcd.print(sensorDataRd.ftmp2);
-    lcd.print("F");
-    lcd.setCursor(0,1);
-    lcd.print(sensorDataRd.pressurehPa);
-    lcd.print("P");
-    lcd.setCursor(6,1);
-    lcd.print(sensorDataRd.ftmp0);
-    lcd.print("F");
-    lcd.setCursor(12,1);
-    lcd.print("MENU");
+    screenUpdate();
 
   }
-  if ( buttons == false ) {   
-    if ( ( millis() - lcdpreviousMillis ) > lcdInterval ) {
-      lcdpreviousMillis = millis();
-      lcd.setBacklight(OFF);
-    }
-  } 
+
+  lcdTimeOut();
+
 }
 
 /*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
@@ -419,7 +371,7 @@ bool hrlyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData &
 }
 
 bool dailyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData &sensorDataRd ) {
-  uint16_t framReadAddress = FRAM_ADDR_FIRST_HR; 
+  uint16_t framReadAddress = FRAM_ADDR_FIRST_HR;
   uint16_t framWriteAddress;
   sensorDataAvg.humy1 = 0;
   sensorDataAvg.ftmp1 = 0;
@@ -465,5 +417,41 @@ bool dailyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData 
   return true;
 }
 
+void screenUpdate() {
+  lcd.setBacklight(ON);
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print(sensorDataRd.humy1);
+  lcd.print("%");
+  lcd.setCursor(4,0);
+  lcd.print(sensorDataRd.ftmp1);
+  lcd.print("F");
+  lcd.setCursor(8,0);
+  lcd.print(sensorDataRd.humy2);
+  lcd.print("%");
+  lcd.setCursor(12,0);
+  lcd.print(sensorDataRd.ftmp2);
+  lcd.print("F");
+  lcd.setCursor(0,1);
+  lcd.print(sensorDataRd.pressurehPa);
+  lcd.print("P");
+  lcd.setCursor(4,1);
+  lcd.print(sensorDataRd.ftmp0);
+  lcd.print("F");
+  lcd.setCursor(0,1);
+  lcd.print("E")
+  lcd.print(dailyIOEvents);
+  lcd.setCursor(12,1);
+  lcd.print("MENU");
+  lcd.Cursor();
+  lcd.blink();
+}
 
-
+void lcdTimeOut() {
+  if ( buttons == false ) {
+    if ( millis() - lcdpreviousMillis > lcdInterval ) {    //need abs()?
+      lcdpreviousMillis = millis();
+      lcd.setBacklight(OFF);
+    }
+  }
+}
