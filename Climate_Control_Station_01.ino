@@ -15,10 +15,9 @@
 #include "Adafruit_FRAM_I2C_Plus.h"       //FRAM chip I/O plus lib
 #include <Time.h>                    //Time library synced via serial
 
-// These #defines set the back-light for monochrome LCD
-#define OFF 0x0
-#define ON 0x1
-
+#define OFF 0x0 // set the back-light
+#define ON 0x1  //for monochrome LCD
+#define LCD_TIME_OUT 10000   // seconds to lcd timeout
 #define DHTPIN_1 3     //pin DHT22 Sensor 1 is on
 #define DHTPIN_2 4     //pin DHT22 Sensor 2 is on
 #define DHTTYPE DHT22   // DHT 22  (AM2302)
@@ -143,8 +142,7 @@ void loop() {
   static uint8_t dailyIOEvents;
   unsigned long millisperhour = 3600000;
   unsigned long ioInterval;    //15 minute I/O update intervals
-  unsigned long lcdInterval = 30000;    // seconds to lcd timeout
-  //note: framReadAddress var for lcd readout more OOP/class should be redesigned to eliminate redundancies
+    //note: framReadAddress var for lcd readout more OOP/class should be redesigned to eliminate redundancies
   uint16_t framReadAddress;
 
   ioInterval = millisperhour / UPDATES_PER_HOUR;
@@ -182,11 +180,6 @@ void loop() {
     framReadAddress = FRAM_ADDR_LAST_QTR;
     Serial.println(minute());
     readField( sensorDataRd, framReadAddress );
-
-    screenUpdate();
-
-    lcdTimeOut();
-
   }
 
   if ( buttons ) {
@@ -196,12 +189,11 @@ void loop() {
     Serial.println(fram.read16( framReadAddress ), HEX);
     readField( sensorDataRd, framReadAddress );
 
-    screenUpdate();
-
+    lcdDrawHome();
+    if ( buttons & BUTTON_SELECT ){
+      mainMenu();
+    }
   }
-
-  lcdTimeOut();
-
 }
 
 /*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
@@ -417,9 +409,9 @@ bool dailyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData 
   return true;
 }
 
-void screenUpdate() {
+void lcdDrawHome() {
   lcd.setBacklight(ON);
-  lcd.clear();
+  //lcd.clear();
   lcd.setCursor(0,0);
   lcd.print(sensorDataRd.humy1);
   lcd.print("%");
@@ -446,12 +438,88 @@ void screenUpdate() {
   lcd.Cursor();
   lcd.blink();
 }
+//need to do better design maybe menu class with enumerated items maybe try printing enumsfor menu names and use struct for lcd x,y?
+void mainMenu() {
 
-void lcdTimeOut() {
+  byte row0col[4];
+  byte row1col[3];
+
+  byte mainMenuItems = ( sizeof(row0col) + sizeof(row1col));
+  row0col[0] = 0;
+  row0col[2] = 4;
+  row0col[3] = 8;
+  row1col[4] = 12;
+  row1col[0] = 0;
+  row1col[1] = 5;
+  row1col[2] = 15;
+
+  //lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("NOW");
+  lcd.setCursor(0,4);
+  lcd.print("QTR");
+  lcd.setCursor(0,8);
+  lcd.print("HRS");
+  lcd.setCursor(0,12);
+  lcd.print("DAY");
+  lcd.setCursor(1,0);
+  lcd.print("FANS");
+  lcd.setCursor(1,5);
+  lcd.print("PUMPS");
+  lcd.setCursor(1,15);
+  lcd.print(">");
+  lcd.setCursor(0,0);
+  lcd.Cursor();
+  lcd.blink();
+
+    if ( menuItemNav(mainMenuItems, row0col, row1col) ) {
+      switch (mainMenuItems)) {
+        case 1:
+        nowMenu();
+        break;
+        case 2:
+        qtrMenu();
+        break;
+        case 3:
+        hrsMenu();
+        break;
+        case 4:
+        dayMenu();
+        break;
+        case 5:
+        fansMenu();
+        break;
+        case 6:
+        pumpsMenu();
+        break;
+        case 7:
+        goBack();
+        break;
+      }
+    }
+}
+
+byte menuItemNav(byte Items ) {
+  byte currentItem[numItems] = 0;
+
+  if (buttons & BUTTON_RIGHT ) {
+    return currentItem[numItems++];
+  }
+  if (buttons & BUTTON_LEFT ) {
+    return currentItem[numItems--];
+  }
+}
+
+bool lcdTimeOut() {
+  unsigned long lcdInterval = LCD_TIME_OUT;    // seconds to lcd timeout
   if ( buttons == false ) {
     if ( millis() - lcdpreviousMillis > lcdInterval ) {    //need abs()?
       lcdpreviousMillis = millis();
       lcd.setBacklight(OFF);
+      return true
     }
+  }
+  else {
+    return false
   }
 }
