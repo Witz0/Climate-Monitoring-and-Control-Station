@@ -78,6 +78,12 @@ struct sensorData {
   int ftmp0;
 };
 
+struct menuItemData {
+  uint8_t lcdY;
+  uint8_t lcdX;
+  char menuItemName;  // I think this will have to be set manually to menuItemName[9] for 8 chars or 17 for the full LCD 16 chars +1 for NULL
+};
+
 bool sensorioQuarterly( sensorData &sensorDataWr );
 bool writeField( sensorData &sensorDataWr, uint16_t framWriteAddress );
 bool readField( sensorData &sensorDataRd, uint16_t framReadAddress );
@@ -88,7 +94,6 @@ bool dailyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData 
  Begin Setup of arduino and
  all sensors and libraries
  +-------+-------+--------+---------+--------+----------+--------+-----------*+ */
-
 void setup() {
   Serial.begin(9600);		// Debugging output
   lcd.begin(16, 2);			// set up the LCD's number of columns and rows:
@@ -440,22 +445,36 @@ void lcdDrawHome() {
 }
 //need to do better design maybe menu class with enumerated items maybe try printing enumsfor menu names and use struct for lcd x,y?
 void mainMenu() {
+  //if (first run) fix this so menu data is set once to reduce cpu
+  byte numItems = 7;
+  byte currentItemNum = 0;
+  menuItemData mainMenuData[numItems];
 
-  byte row0col[4];
-  byte row1col[3];
-
-  byte mainMenuItems = ( sizeof(row0col) + sizeof(row1col));
-  row0col[0] = 0;
-  row0col[2] = 4;
-  row0col[3] = 8;
-  row1col[4] = 12;
-  row1col[0] = 0;
-  row1col[1] = 5;
-  row1col[2] = 15;
+  mainMenuData[0].lcdY = 0;
+  mainMenuData[0].lcdX = 0;
+  mainMenuData[0].menuItemName = "NOW";
+  mainMenuData[1].lcdY = 0;
+  mainMenuData[1].lcdX = 4;
+  mainMenuData[1].menuItemName = "QTR";
+  mainMenuData[2].lcdY = 0;
+  mainMenuData[2].lcdX = 8;
+  mainMenuData[2].menuItemName = "HRS";
+  mainMenuData[3].lcdY = 0;
+  mainMenuData[3].lcdX = 12;
+  mainMenuData[3].menuItemName = "DAY";
+  mainMenuData[4].lcdY = 1;
+  mainMenuData[4].lcdX = 0;
+  mainMenuData[4].menuItemName = "FANS";
+  mainMenuData[5].lcdY = 1;
+  mainMenuData[5].lcdX = 5;
+  mainMenuData[5].menuItemName = "PUMPS";
+  mainMenuData[6].lcdY = 1;
+  mainMenuData[6].lcdX = 15;
+  mainMenuData[6].menuItemName = "<";
 
   //lcd.clear();
-  lcd.setCursor(0,0);
-  lcd.print("NOW");
+  lcd.setCursor(mainMenuData[0].lcdY,mainMenuData[0].lcdX);
+  lcd.print(mainMenuData[0].menuItemName);
   lcd.setCursor(0,4);
   lcd.print("QTR");
   lcd.setCursor(0,8);
@@ -472,41 +491,56 @@ void mainMenu() {
   lcd.Cursor();
   lcd.blink();
 
-    if ( menuItemNav(mainMenuItems, row0col, row1col) ) {
-      switch (mainMenuItems)) {
-        case 1:
-        nowMenu();
-        break;
-        case 2:
-        qtrMenu();
-        break;
-        case 3:
-        hrsMenu();
-        break;
-        case 4:
-        dayMenu();
-        break;
-        case 5:
-        fansMenu();
-        break;
-        case 6:
-        pumpsMenu();
-        break;
-        case 7:
-        goBack();
-        break;
-      }
+  currentItemNum = menuItemNav( numItems, currentItemNum );
+
+  if (buttons & BUTTON_SELECT ) {
+    switch (currentItemNum)) {
+      case 1:
+      nowMenu();
+      break;
+      case 2:
+      qtrMenu();
+      break;
+      case 3:
+      hrsMenu();
+      break;
+      case 4:
+      dayMenu();
+      break;
+      case 5:
+      fansMenu();
+      break;
+      case 6:
+      pumpsMenu();
+      break;
+      case 7:
+      goBack();
+      break;
     }
+  }
 }
 
-byte menuItemNav(byte Items ) {
-  byte currentItem[numItems] = 0;
-
+byte menuItemNav( byte numItems, byte currentItemNum ) {
+    // must take into account button polling speed and state changes
   if (buttons & BUTTON_RIGHT ) {
-    return currentItem[numItems++];
+    if (!buttons){
+      if (itemNum == numItems ) {
+        return itemNum = 0;
+      }
+      else {
+        return itemNum++;
+      }
+    }
   }
   if (buttons & BUTTON_LEFT ) {
-    return currentItem[numItems--];
+    if (!buttons){
+      if (itemNum == 0 ) {
+        return itemNum = numItems;
+      }
+      else {
+        return itemNum--;
+      }
+    }
   }
 }
 
