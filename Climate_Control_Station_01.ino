@@ -77,13 +77,13 @@ struct sensorData {
   uint16_t pressurehPa;
   int ftmp0;
 };
-
+/*
 struct menuItemData {
   uint8_t lcdY;
   uint8_t lcdX;
-  char menuItemName;  // I think this will have to be set manually to menuItemName[9] for 8 chars or 17 for the full LCD 16 chars +1 for NULL
+  char menuItemName;  // I think this would have to be set manually to menuItemName[9] for 8 chars or 17 for the full LCD 16 chars +1 for NULL
 };
-
+*/
 bool sensorioQuarterly( sensorData &sensorDataWr );
 bool writeField( sensorData &sensorDataWr, uint16_t framWriteAddress );
 bool readField( sensorData &sensorDataRd, uint16_t framReadAddress );
@@ -154,8 +154,8 @@ void loop() {
 
   // Note: be nice to get first I/O on boot, which requires do-while with state machine check with static var.
   if ( ( millis() - previousMillis ) >= ioInterval ) {
-    dailyIOEvents = 24 * UPDATES_PER_HOUR;
     previousMillis = millis();
+    dailyIOEvents = 24 * UPDATES_PER_HOUR;
     dailyIOEvents--;
     Serial.print("dailyIOEvents:  ");
     Serial.println(dailyIOEvents);
@@ -204,6 +204,23 @@ void loop() {
 /*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
  END OF MAIN LOOP FUNCTION
  *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*/
+
+ class Timer
+ {
+unisgned long previousMillis;
+unsigned long interval;
+
+ public:
+   bool Timer(unsigned long interval)
+   {
+     if ( ( millis() - previousMillis ) >= ioInterval ) {
+       previousMillis = millis();
+       return true;
+    }
+    else {
+      return false;
+    }
+ };
 
 // Sensor I/O Function gets inputs and writes initial data to FRAM every 15 mins
 
@@ -448,6 +465,7 @@ void mainMenu() {
   //if (first run) fix this so menu data is set once to reduce cpu
   byte numItems = 7;
   byte currentItemNum = 0;
+  /*
   menuItemData mainMenuData[numItems];
 
   mainMenuData[0].lcdY = 0;
@@ -471,10 +489,11 @@ void mainMenu() {
   mainMenuData[6].lcdY = 1;
   mainMenuData[6].lcdX = 15;
   mainMenuData[6].menuItemName = "<";
+  */
 
   //lcd.clear();
-  lcd.setCursor(mainMenuData[0].lcdY,mainMenuData[0].lcdX);
-  lcd.print(mainMenuData[0].menuItemName);
+  lcd.setCursor(0,0);
+  lcd.print("NOW");
   lcd.setCursor(0,4);
   lcd.print("QTR");
   lcd.setCursor(0,8);
@@ -522,8 +541,10 @@ void mainMenu() {
 
 byte menuItemNav( byte numItems, byte currentItemNum ) {
     // must take into account button polling speed and state changes
+    itemNum = currentItemNum;
+
   if (buttons & BUTTON_RIGHT ) {
-    if (!buttons){
+    if (buttons){
       if (itemNum == numItems ) {
         return itemNum = 0;
       }
@@ -533,7 +554,7 @@ byte menuItemNav( byte numItems, byte currentItemNum ) {
     }
   }
   if (buttons & BUTTON_LEFT ) {
-    if (!buttons){
+    if (buttons){
       if (itemNum == 0 ) {
         return itemNum = numItems;
       }
