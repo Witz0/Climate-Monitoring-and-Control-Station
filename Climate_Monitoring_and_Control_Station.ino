@@ -471,14 +471,14 @@ void mainMenu() {
   }
 }
 
-byte menuItemNav( byte numItems, byte currentItemNum ) {
+byte menuItemNav( byte numberItems, byte currentItemNumber ) {
     // must take into account button polling speed and state changes
     uint8_t buttons = lcd.readButtons();
-    byte itemNum = currentItemNum;
+    byte itemNum = currentItemNumber;
 
   if (buttons & BUTTON_RIGHT ) {
     if (buttons){
-      if (itemNum == numItems ) {
+      if (itemNum == numberItems ) {
         return itemNum = 0;
       }
       else {
@@ -489,7 +489,7 @@ byte menuItemNav( byte numItems, byte currentItemNum ) {
   if (buttons & BUTTON_LEFT ) {
     if (buttons){
       if (itemNum == 0 ) {
-        return itemNum = numItems;
+        return itemNum = numberItems;
       }
       else {
         return itemNum--;
