@@ -474,7 +474,7 @@ void mainMenu() {
 byte menuItemNav( byte numItems, byte currentItemNum ) {
     // must take into account button polling speed and state changes
     uint8_t buttons = lcd.readButtons();
-    itemNum = currentItemNum;
+    byte itemNum = currentItemNum;
 
   if (buttons & BUTTON_RIGHT ) {
     if (buttons){
@@ -500,16 +500,16 @@ byte menuItemNav( byte numItems, byte currentItemNum ) {
 
 bool lcdTimeOut() {
   uint8_t buttons = lcd.readButtons();
+  Timer lcdTimer;
   unsigned long lcdInterval = LCD_TIME_OUT;    // seconds to lcd timeout
   if ( buttons == false ) {
-    if ( millis() - lcdpreviousMillis > lcdInterval ) {    //need abs()?
-      lcdpreviousMillis = millis();
+    if ( lcdTimer.CheckTimer( lcdInterval )) {
       lcd.setBacklight(OFF);
       return true;
     }
   }
   else {
-    return false
+    return false;
   }
 }
 
