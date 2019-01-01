@@ -137,7 +137,7 @@ void loop() {
    FRAM storage will need some tracking for eventual overwrite on rollover (pointers) and for readout
    to UI menus
    */
-  Timer ioTimer;
+  Timer ioTimer();
   sensorData sensorDataWr;
   sensorData sensorDataRd;
   sensorData sensorDataAvg;
@@ -154,8 +154,8 @@ void loop() {
   ioInterval = millisperhour / UPDATES_PER_HOUR;
 
   // Note: be nice to get first I/O on boot, which requires do-while with state machine check with static var.
-  if ( ioTimer ) {
-    previousMillis = millis();
+  if ( ioTimer.CheckTimer( ioInterval ) {
+    //previousMillis = millis();
     dailyIOEvents = 24 * UPDATES_PER_HOUR;
     dailyIOEvents--;
     Serial.print("dailyIOEvents:  ");
@@ -195,7 +195,7 @@ void loop() {
     Serial.println(fram.read16( framReadAddress ), HEX);
     readField( sensorDataRd, framReadAddress );
 
-    lcdDrawHome();
+    lcdDrawHome( sensorData &sensorDataRd );
     if ( buttons & BUTTON_SELECT ){
       mainMenu();
     }
@@ -438,7 +438,7 @@ void lcdDrawHome( sensorData &sensorDataRd ) {
   lcd.print("F");
   lcd.setCursor(0,1);
   lcd.print("E")
-  lcd.print(dailyIOEvents);
+  //lcd.print(dailyIOEvents);
   lcd.setCursor(12,1);
   lcd.print("MENU");
   //lcd.setCursor();

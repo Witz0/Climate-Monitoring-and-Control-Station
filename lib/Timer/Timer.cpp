@@ -1,6 +1,6 @@
 #include <Timer.h>
 
-bool Timer::Timer(unsigned long interval) {
+Timer::Timer(unsigned long interval) {
   {
     if ( ( millis() - previousMillis ) >= interval ) {
       previousMillis = millis();

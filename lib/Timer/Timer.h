@@ -13,7 +13,7 @@ class Timer
   public:
     unsigned long interval;
 
-    bool Timer(unsigned long interval);
+    Timer(unsigned long interval);
 
   private:
    unsigned long previousMillis;
