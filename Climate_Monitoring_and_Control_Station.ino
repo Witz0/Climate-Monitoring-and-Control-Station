@@ -8,7 +8,7 @@
  **********************/
 #include <Wire.h>
 #include <Adafruit_MPL115A2.h>       //Barometric and Temp Sensor
-#include <Adafruit_MCP23017.h>       //LCD Shield Parallel to Serial
+//#include <Adafruit_MCP23017.h>       //LCD Shield Parallel to Serial
 #include <Adafruit_RGBLCDShield.h>   //AdaFruit Library for LCD Shield w/ Buttons
 #include <DHT.h>                     //DHT22 Humidity and Temp Sensors
 #include <Adafruit_FRAM_I2C_Plus.h>       //FRAM chip I/O plus lib
