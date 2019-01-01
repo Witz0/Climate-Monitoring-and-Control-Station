@@ -6,7 +6,14 @@
  * 32K FRAM for long term data storage
  * for Climate Monitoring and Control
  **********************/
-
+#include <Wire.h>
+#include <Adafruit_MPL115A2.h>       //Barometric and Temp Sensor
+#include <Adafruit_MCP23017.h>       //LCD Shield Parallel to Serial
+#include <Adafruit_RGBLCDShield.h>   //AdaFruit Library for LCD Shield w/ Buttons
+#include <DHT.h>                     //DHT22 Humidity and Temp Sensors
+#include <Adafruit_FRAM_I2C_Plus.h>       //FRAM chip I/O plus lib
+#include <Time.h>                    //Time library synced via serial
+#include <Timer.h>
 #include "Climate_Monitoring_and_Control_Station.h"
 
 //globals?
@@ -30,8 +37,7 @@ DHT dht2(DHTPIN_2, DHTTYPE, 6);
 Adafruit_FRAM_I2C_Plus fram     = Adafruit_FRAM_I2C_Plus();
 uint16_t          framAddr = 0;
 
-
-
+//bool printtoLCD( uint16_t framReadAddress );
 /* +*-+-----+------+---------+--------+---------+----------+---------+---------+
  Begin Setup of arduino and
  all sensors and libraries
@@ -95,7 +101,7 @@ void loop() {
   ioInterval = millisperhour / UPDATES_PER_HOUR;
 
   // Note: be nice to get first I/O on boot, which requires do-while with state machine check with static var.
-  if ( ioTimer.CheckTimer( ioInterval ) {
+  if ( ioTimer.CheckTimer( ioInterval )) {
     //previousMillis = millis();
     dailyIOEvents = 24 * UPDATES_PER_HOUR;
     dailyIOEvents--;
@@ -136,7 +142,7 @@ void loop() {
     Serial.println(fram.read16( framReadAddress ), HEX);
     readField( sensorDataRd, framReadAddress );
 
-    lcdDrawHome( sensorData &sensorDataRd );
+    lcdDrawHome( sensorDataRd );
     if ( buttons & BUTTON_SELECT ){
       mainMenu();
     }
@@ -277,7 +283,6 @@ bool hrlyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData &
     framWriteAddress = fram.read16( FRAM_ADDR_LAST_HR );
   }
 
-
   for ( byte quarter = 4; quarter > 0; quarter-- ) {
     readField( sensorDataRd, framReadAddress );
     framReadAddress = framReadAddress + FIELD_WIDTH;
@@ -378,15 +383,17 @@ void lcdDrawHome( sensorData &sensorDataRd ) {
   lcd.print(sensorDataRd.ftmp0);
   lcd.print("F");
   lcd.setCursor(0,1);
-  lcd.print("E")
+  lcd.print("E");
   //lcd.print(dailyIOEvents);
   lcd.setCursor(12,1);
   lcd.print("MENU");
   //lcd.setCursor();
   lcd.blink();
 }
+
 //need to do better design maybe menu class with enumerated items maybe try printing enumsfor menu names and use struct for lcd x,y?
 void mainMenu() {
+  uint8_t buttons = lcd.readButtons();
   //if (first run) fix this so menu data is set once to reduce cpu
   byte numItems = 7;
   byte currentItemNum = 0;
@@ -438,7 +445,7 @@ void mainMenu() {
   currentItemNum = menuItemNav( numItems, currentItemNum );
 
   if (buttons & BUTTON_SELECT ) {
-    switch (currentItemNum)) {
+    switch (currentItemNum) {
       case 1:
       nowMenu();
       break;
@@ -466,6 +473,7 @@ void mainMenu() {
 
 byte menuItemNav( byte numItems, byte currentItemNum ) {
     // must take into account button polling speed and state changes
+    uint8_t buttons = lcd.readButtons();
     itemNum = currentItemNum;
 
   if (buttons & BUTTON_RIGHT ) {
@@ -491,15 +499,39 @@ byte menuItemNav( byte numItems, byte currentItemNum ) {
 }
 
 bool lcdTimeOut() {
+  uint8_t buttons = lcd.readButtons();
   unsigned long lcdInterval = LCD_TIME_OUT;    // seconds to lcd timeout
   if ( buttons == false ) {
     if ( millis() - lcdpreviousMillis > lcdInterval ) {    //need abs()?
       lcdpreviousMillis = millis();
       lcd.setBacklight(OFF);
-      return true
+      return true;
     }
   }
   else {
     return false
   }
 }
+
+void nowMenu() {
+
+}
+void qtrMenu() {
+
+}
+void hrsMenu() {
+
+}
+void dayMenu() {
+
+}
+void fansMenu() {
+  
+}
+void pumpsMenu() {
+
+}
+void goBack() {
+
+}
+

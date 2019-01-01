@@ -1,15 +1,6 @@
 #ifndef _Climate_Monitoring_and_Control_Station_H
 #define _Climate_Monitoring_and_Control_Station_H
 
-#include <Wire.h>
-#include <Adafruit_MPL115A2.h>       //Barometric and Temp Sensor
-#include <Adafruit_MCP23017.h>       //LCD Shield Parallel to Serial
-#include <Adafruit_RGBLCDShield.h>   //AdaFruit Library for LCD Shield w/ Buttons
-#include <DHT.h>                     //DHT22 Humidity and Temp Sensors
-#include <Adafruit_FRAM_I2C_Plus.h>       //FRAM chip I/O plus lib
-#include <Time.h>                    //Time library synced via serial
-#include <Timer.h>
-
 #define OFF 0x0 // set the back-light
 #define ON 0x1  //for monochrome LCD
 #define LCD_TIME_OUT 10000   // seconds to lcd timeout
@@ -64,10 +55,17 @@ bool readField( sensorData &sensorDataRd, uint16_t framReadAddress );
 bool hrlyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData &sensorDataRd );
 bool dailyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData &sensorDataRd );
 //bool printtoLCD( uint16_t framReadAddress );
-
 void lcdDrawHome( sensorData &sensorDataRd );
 void mainMenu();
 byte menuItemNav( byte numItems, byte currentItemNum );
 bool lcdTimeOut();
+void nowMenu();
+void qtrMenu();
+void hrsMenu();
+void dayMenu();
+void fansMenu();
+void pumpsMenu();
+void goBack();
 
-#endif // _HEADERFILE_H    // Put this line at the end of your file.
+#endif
+
