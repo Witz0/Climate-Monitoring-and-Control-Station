@@ -13,10 +13,12 @@ class Timer
   public:
     unsigned long interval;
 
-    Timer(unsigned long interval);
+    Timer();
+
+    bool CheckTimer(unsigned long interval);
 
   private:
-   unsigned long previousMillis;
+   unsigned long previousMillis = 0;
   };
 
   #endif
