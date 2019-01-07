@@ -36,11 +36,11 @@
 
 struct sensorData {
   uint8_t humy1;
-  int ftmp1;
+  int itmp1;
   uint8_t humy2;
-  int ftmp2;
+  int itmp2;
   uint16_t pressurehPa;
-  int ftmp0;
+  int itmp0;
 };
 /*
 struct menuItemData {
