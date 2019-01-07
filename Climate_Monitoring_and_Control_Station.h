@@ -34,28 +34,8 @@
 
 // custom structures functions declarations and prototypes
 
-struct sensorData {
-  uint8_t humy1;
-  int itmp1;
-  uint8_t humy2;
-  int itmp2;
-  uint16_t pressurehPa;
-  int itmp0;
-};
-/*
-struct menuItemData {
-  uint8_t lcdY;
-  uint8_t lcdX;
-  char menuItemName;  // I think this would have to be set manually to menuItemName[9] for 8 chars or 17 for the full LCD 16 chars +1 for NULL
-};
-*/
-bool sensorioQuarterly( sensorData &sensorDataWr );
-bool writeField( sensorData &sensorDataWr, uint16_t framWriteAddress );
-bool readField( sensorData &sensorDataRd, uint16_t framReadAddress );
-bool hrlyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData &sensorDataRd );
-bool dailyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData &sensorDataRd );
 //bool printtoLCD( uint16_t framReadAddress );
-void lcdDrawHome( sensorData &sensorDataRd );
+void lcdDrawHome( sensorData &sensorDataWr );
 void mainMenu();
 byte menuItemNav( byte numItems, byte currentItemNum );
 bool lcdTimeOut();
@@ -68,4 +48,3 @@ void pumpsMenu();
 void goBack();
 
 #endif
-
