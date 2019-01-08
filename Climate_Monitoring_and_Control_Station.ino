@@ -70,7 +70,7 @@ void setup() {
 
   Serial.println("Setup Complete. First I/O incoming....");
   //delay( 250 )
-  lcd.setBacklight(OFF);
+  //lcd.setBacklight(OFF);
 }
 
 /* +*-+-----+------+---------+--------+---------+----------+---------+---------+
@@ -86,6 +86,7 @@ void loop() {
    to UI menus
    */
   Timer ioTimer;
+  Timer lcdTimer;
   sensorData sensorDataWr;
   sensorData sensorDataRd;
   sensorData sensorDataAvg;
@@ -96,14 +97,15 @@ void loop() {
   static uint8_t dailyIOEvents = 24 * UPDATES_PER_HOUR;
   unsigned long millisperhour = 3600000;
   unsigned long ioInterval;    //15 minute I/O update intervals
-    //note: framReadAddress var for lcd readout more OOP/class should be redesigned to eliminate redundancies
+  //note: framReadAddress var for lcd readout more OOP/class should be redesigned to eliminate redundancies
   uint16_t framReadAddress;
 
   ioInterval = millisperhour / UPDATES_PER_HOUR;
 
   // Note: be nice to get first I/O on boot, which requires do-while with state machine check with static var.
   if ( ioTimer.CheckTimer( ioInterval )) {
-    //previousMillis = millis();
+    Serial.print("dailyIOEvents:  ");
+    Serial.println(dailyIOEvents);
     dailyIOEvents--;
     Serial.print("dailyIOEvents:  ");
     Serial.println(dailyIOEvents);
@@ -118,6 +120,8 @@ void loop() {
     //and classes for more dynamic code and program application.
     if ( sensorioQuarterly( sensorDataWr ) == true ) {
       writeField( sensorDataWr, framWriteAddress + (FIELD_WIDTH * ((24 * UPDATES_PER_HOUR) - dailyIOEvents)));
+      Serial.print("framWriteAddress: ");
+      Serial.println(framWriteAddress, HEX );
       if ( ( dailyIOEvents ) % UPDATES_PER_HOUR == 0 ) {
         hrlyavgs( sensorDataWr, sensorDataAvg, sensorDataRd );
         if ( dailyIOEvents == 0 ) {
@@ -146,8 +150,10 @@ void loop() {
     lcdDrawHome( sensorDataRd );
     if ( buttons & BUTTON_SELECT ){
       mainMenu();
+      
     }
   }
+  lcdTimeOut();
 }
 
 /*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
