@@ -13,7 +13,7 @@
 #include <DHT.h>                     //DHT22 Humidity and Temp Sensors
 #include <Adafruit_FRAM_I2C_Plus.h>       //FRAM chip I/O plus lib
 #include <Time.h>                    //Time library synced via serial
-#include <Timer.h>
+#include "Timer.h"
 #include "Climate_Monitoring_and_Control_Station.h"
 
 //globals?
