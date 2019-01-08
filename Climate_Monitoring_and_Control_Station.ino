@@ -137,7 +137,6 @@ void loop() {
   }
 
   if ( buttons ) {
-    framReadAddress = FRAM_ADDR_LAST_QTR;
     Serial.print("framReadAddress in HEX: ");
     Serial.println(framReadAddress, HEX);
     Serial.print("framReadAddress data in HEX: ");
@@ -301,12 +300,12 @@ bool hrlyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData &
     sensorDataAvg.itmp0 = sensorDataAvg.itmp0 + sensorDataRd.humy2;
   }
 
-  sensorDataAvg.humy1 = sensorDataAvg.humy1 / 4;
-  sensorDataAvg.itmp1 = sensorDataAvg.itmp1 / 4;
-  sensorDataAvg.humy2 = sensorDataAvg.humy2 / 4;
-  sensorDataAvg.itmp2 = sensorDataAvg.itmp2 / 4;
-  sensorDataAvg.pressurehPa = sensorDataAvg.pressurehPa / 4;
-  sensorDataAvg.itmp0 = sensorDataAvg.itmp0 / 4;
+  sensorDataAvg.humy1 = sensorDataAvg.humy1 / UPDATES_PER_HOUR;
+  sensorDataAvg.itmp1 = sensorDataAvg.itmp1 / UPDATES_PER_HOUR;
+  sensorDataAvg.humy2 = sensorDataAvg.humy2 / UPDATES_PER_HOUR;
+  sensorDataAvg.itmp2 = sensorDataAvg.itmp2 / UPDATES_PER_HOUR;
+  sensorDataAvg.pressurehPa = sensorDataAvg.pressurehPa / UPDATES_PER_HOUR;
+  sensorDataAvg.itmp0 = sensorDataAvg.itmp0 / UPDATES_PER_HOUR;
   sensorDataWr.humy1 = sensorDataAvg.humy1;
   sensorDataWr.itmp1 = sensorDataAvg.itmp1;
   sensorDataWr.humy2 = sensorDataAvg.humy2;
