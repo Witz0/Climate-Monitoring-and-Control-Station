@@ -103,21 +103,18 @@ void loop() {
 
   // Note: be nice to get first I/O on boot, which requires do-while with state machine check with static var.
   if ( ioTimer.CheckTimer( ioInterval )) {
-    Serial.print("dailyIOEvents:  ");
-    Serial.println(dailyIOEvents);
-    dailyIOEvents--;
-    Serial.print("dailyIOEvents:  ");
-    Serial.println(dailyIOEvents);
-    Serial.print("Time = ");
-    Serial.print(hour());
-    Serial.print(":");
-    Serial.print(minute());
-    Serial.print(".");
-    Serial.println(second());
-
-    //NOTE: possibly use sizeof() instead of defined field width for expanding data structures/arrays
-    //and classes for more dynamic code and program application.
     if ( sensorioQuarterly( sensorDataWr ) == true ) {
+      Serial.print("dailyIOEvents:  ");
+      Serial.println(dailyIOEvents);
+      dailyIOEvents--;
+      Serial.print("dailyIOEvents:  ");
+      Serial.println(dailyIOEvents);
+      Serial.print("Time = ");
+      Serial.print(hour());
+      Serial.print(":");
+      Serial.print(minute());
+      Serial.print(".");
+      Serial.println(second());
       writeField( sensorDataWr, framWriteAddress + (FIELD_WIDTH * ((24 * UPDATES_PER_HOUR) - dailyIOEvents)));
       Serial.print("framWriteAddress: ");
       Serial.println(framWriteAddress, HEX );
@@ -149,7 +146,7 @@ void loop() {
     lcdDrawHome( sensorDataRd );
     if ( buttons & BUTTON_SELECT ){
       mainMenu();
-      
+
     }
   }
   lcdTimeOut();
@@ -234,9 +231,9 @@ bool sensorioQuarterly( sensorData &sensorDataWr ) {
 
 }
 /*not modular enough rewrite with func or two
-so individual addresses & values are handled by in single func call
-framWriteAddress = write/readData( framAddress, sensorDataCopy )
-*/
+ so individual addresses & values are handled by in single func call
+ framWriteAddress = write/readData( framAddress, sensorDataCopy )
+ */
 bool writeField( sensorData &sensorDataWr, uint16_t framWriteAddress ) {
 
   fram.write8( framWriteAddress, sensorDataWr.humy1 );
@@ -439,25 +436,25 @@ void mainMenu() {
 
   if (buttons & BUTTON_SELECT ) {
     switch (currentItemNum) {
-      case 1:
+    case 1:
       nowMenu();
       break;
-      case 2:
+    case 2:
       qtrMenu();
       break;
-      case 3:
+    case 3:
       hrsMenu();
       break;
-      case 4:
+    case 4:
       dayMenu();
       break;
-      case 5:
+    case 5:
       fansMenu();
       break;
-      case 6:
+    case 6:
       pumpsMenu();
       break;
-      case 7:
+    case 7:
       goBack();
       break;
     }
@@ -466,9 +463,9 @@ void mainMenu() {
 }
 
 byte menuItemNav( byte numberItems, byte currentItemNumber ) {
-    // must take into account button polling speed and state changes
-    uint8_t buttons = lcd.readButtons();
-    byte itemNum = currentItemNumber;
+  // must take into account button polling speed and state changes
+  uint8_t buttons = lcd.readButtons();
+  byte itemNum = currentItemNumber;
 
   if (buttons & BUTTON_RIGHT ) {
     if (buttons){
@@ -550,3 +547,4 @@ void pumpsMenu() {
 void goBack() {
   return;
 }
+
