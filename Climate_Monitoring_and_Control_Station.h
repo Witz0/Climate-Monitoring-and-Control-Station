@@ -28,9 +28,9 @@
 #define FRAM_ADDR_LAST_HR 0xA
 #define FRAM_ADDR_LAST_DAY 0xC
 //First Adress of FRAM Segment
-#define FRAM_ADDR_FIRST_QTR 0xE
-#define FRAM_ADDR_FIRST_HR 0x1A
-#define FRAM_ADDR_FIRST_DAY 0x26
+#define FRAM_ADDR_FIRST_QTR 0xE    // 10w * 4qtr of FRAM for QTR space
+#define FRAM_ADDR_FIRST_HR 0x36    // 10w * 24 of FRAM for HRS
+#define FRAM_ADDR_FIRST_DAY 0x126    // daily avgs fill the rest until full then reset
 
 // custom structures functions declarations and prototypes
 
@@ -44,11 +44,11 @@ struct sensorData {
 };
 /*
 struct menuItemData {
-  uint8_t lcdY;
-  uint8_t lcdX;
-  char menuItemName;  // I think this would have to be set manually to menuItemName[9] for 8 chars or 17 for the full LCD 16 chars +1 for NULL
-};
-*/
+ uint8_t lcdY;
+ uint8_t lcdX;
+ char menuItemName;  // I think this would have to be set manually to menuItemName[9] for 8 chars or 17 for the full LCD 16 chars +1 for NULL
+ };
+ */
 bool sensorioQuarterly( sensorData &sensorDataWr );
 bool writeField( sensorData &sensorDataWr, uint16_t framWriteAddress );
 bool readField( sensorData &sensorDataRd, uint16_t framReadAddress );
@@ -68,4 +68,5 @@ void pumpsMenu();
 void goBack();
 
 #endif
+
 

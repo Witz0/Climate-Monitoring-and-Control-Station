@@ -36,6 +36,8 @@ DHT dht2(DHTPIN_2, DHTTYPE, 6);
 
 Adafruit_FRAM_I2C_Plus fram     = Adafruit_FRAM_I2C_Plus();
 uint16_t          framAddr = 0;
+Timer ioTimer; //instance of Timer for sensor gets
+Timer lcdTimer; //instance of Timer for LCD Backlight Time Out
 
 //bool printtoLCD( uint16_t framReadAddress );
 /* +*-+-----+------+---------+--------+---------+----------+---------+---------+
@@ -85,12 +87,11 @@ void loop() {
    FRAM storage will need some tracking for eventual overwrite on rollover (pointers) and for readout
    to UI menus
    */
-  Timer ioTimer;
+  uint8_t buttons = lcd.readButtons();
   sensorData sensorDataWr;
   sensorData sensorDataRd;
   sensorData sensorDataAvg;
-  uint16_t framWriteAddress = FRAM_ADDR_LAST_QTR;
-  uint8_t buttons = lcd.readButtons();
+  uint16_t framWriteAddress = FRAM_ADDR_FIRST_QTR;
   //static unsigned long previousMillis = 990000;  //initial value over 15 minutes forces first IOEvent at startup
   //static unsigned long lcdpreviousMillis = 0;
   static uint8_t dailyIOEvents = 24 * UPDATES_PER_HOUR;
@@ -104,6 +105,7 @@ void loop() {
   // Note: be nice to get first I/O on boot, which requires do-while with state machine check with static var.
   if ( ioTimer.CheckTimer( ioInterval )) {
     if ( sensorioQuarterly( sensorDataWr ) == true ) {
+      writeField( sensorDataWr, framWriteAddress + (FIELD_WIDTH * ((24 * UPDATES_PER_HOUR) - dailyIOEvents)));
       Serial.print("dailyIOEvents:  ");
       Serial.println(dailyIOEvents);
       dailyIOEvents--;
@@ -115,7 +117,6 @@ void loop() {
       Serial.print(minute());
       Serial.print(".");
       Serial.println(second());
-      writeField( sensorDataWr, framWriteAddress + (FIELD_WIDTH * ((24 * UPDATES_PER_HOUR) - dailyIOEvents)));
       Serial.print("framWriteAddress: ");
       Serial.println(framWriteAddress, HEX );
       if ( ( dailyIOEvents ) % UPDATES_PER_HOUR == 0 ) {
@@ -290,7 +291,7 @@ bool hrlyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData &
     framWriteAddress = fram.read16( FRAM_ADDR_LAST_HR );
   }
 
-  for ( byte quarter = 4; quarter > 0; quarter-- ) {
+  for ( byte updates = UPDATES_PER_HOUR; updates > 0; updates-- ) {
     readField( sensorDataRd, framReadAddress );
     framReadAddress = framReadAddress + FIELD_WIDTH;
     framWriteAddress = framWriteAddress + FIELD_WIDTH;
@@ -492,18 +493,19 @@ byte menuItemNav( byte numberItems, byte currentItemNumber ) {
 
 bool lcdTimeOut() {
   uint8_t buttons = lcd.readButtons();
-  Timer lcdTimer;
   unsigned long lcdInterval = LCD_TIME_OUT;    // seconds to lcd timeout
-  if ( buttons == false ) {
+  if ( !buttons) {
     if ( lcdTimer.CheckTimer( lcdInterval )) {
       lcd.clear();
       lcd.setBacklight(OFF);
-      Serial.println("lcdTimeOut() call true");
       return true;
+    }
+    else {
+      return false;
     }
   }
   else {
-    Serial.println("lcdTimeOut() call false");
+    Serial.println("lcdTimeOut() buttons true");
     return false;
   }
 }
@@ -547,4 +549,5 @@ void pumpsMenu() {
 void goBack() {
   return;
 }
+
 

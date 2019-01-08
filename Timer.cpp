@@ -4,11 +4,13 @@ Timer::Timer() {
 }
 
 bool Timer::CheckTimer(unsigned long interval) {
-  if ( ( millis() - previousMillis ) >= interval ) {
-  previousMillis = millis();
-  return true;
+  currentMillis = millis();
+  if ( ( currentMillis - previousMillis ) >= interval ) {
+    previousMillis = currentMillis;
+    return true;
   }
   else {
     return false;
-   }
- }
+  }
+}
+
