@@ -86,7 +86,6 @@ void loop() {
    to UI menus
    */
   Timer ioTimer;
-  Timer lcdTimer;
   sensorData sensorDataWr;
   sensorData sensorDataRd;
   sensorData sensorDataAvg;
