@@ -113,14 +113,12 @@ void loop() {
     Serial.print(minute());
     Serial.print(".");
     Serial.println(second());
-    Serial.print("ioTimer.CheckTimer: ");
-    Serial.println(ioTimer.CheckTimer( ioInterval ));
 
     //NOTE: possibly use sizeof() instead of defined field width for expanding data structures/arrays
     //and classes for more dynamic code and program application.
     if ( sensorioQuarterly( sensorDataWr ) == true ) {
       writeField( sensorDataWr, framWriteAddress + (FIELD_WIDTH * ((24 * UPDATES_PER_HOUR) - dailyIOEvents)));
-      if ( ( 24 * UPDATES_PER_HOUR ) % UPDATES_PER_HOUR == 0 ) {
+      if ( ( dailyIOEvents ) % UPDATES_PER_HOUR == 0 ) {
         hrlyavgs( sensorDataWr, sensorDataAvg, sensorDataRd );
         if ( dailyIOEvents == 0 ) {
           dailyIOEvents = 24 * UPDATES_PER_HOUR;
@@ -167,7 +165,7 @@ bool sensorioQuarterly( sensorData &sensorDataWr ) {
   //DHT22 is a slow sensor so reading takes about 250 millis and data may be 2 seconds old.
 
   //DHT22 Read Sensor 1
-  sensorDataWr.humy1 = int( dht1.readHumidity( ));
+  sensorDataWr.humy1 = byte( dht1.readHumidity( ));
   // Read temperature as Fahrenheit
   sensorDataWr.itmp1 = int( dht1.readTemperature(true));
 
@@ -183,7 +181,7 @@ bool sensorioQuarterly( sensorData &sensorDataWr ) {
 
   //DHT22 Read Sensor 2
 
-  sensorDataWr.humy2 = int( dht2.readHumidity( ));
+  sensorDataWr.humy2 = byte( dht2.readHumidity( ));
   // Read temperature as Fahrenheit
   sensorDataWr.itmp2 = int( dht2.readTemperature(true));
 
@@ -231,7 +229,10 @@ bool sensorioQuarterly( sensorData &sensorDataWr ) {
   return true;
 
 }
-
+/*not modular enough rewrite with func or two
+so individual addresses & values are handled by in single func call
+framWriteAddress = write/readData( framAddress, sensorDataCopy )
+*/
 bool writeField( sensorData &sensorDataWr, uint16_t framWriteAddress ) {
 
   fram.write8( framWriteAddress, sensorDataWr.humy1 );
@@ -545,4 +546,3 @@ void pumpsMenu() {
 void goBack() {
   return;
 }
-
