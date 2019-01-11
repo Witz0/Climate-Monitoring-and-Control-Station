@@ -157,6 +157,8 @@ void loop() {
       Serial.println(" ");
       if ( dailyIOEvents % UPDATES_PER_HOUR == 0 ) {
         hrlyavgs( sensorDataWr, sensorDataAvg, sensorDataRd );
+        Serial.print("framwrite in loop after hrlyavgs: ");
+        Serial.println(framWriteAddress, HEX );
         if ( dailyIOEvents == 0 ) {
           dailyIOEvents = 24 * UPDATES_PER_HOUR;
           dailyavgs( sensorDataWr, sensorDataAvg, sensorDataRd );
@@ -298,7 +300,6 @@ bool readField( sensorData &sensorDataRd, uint16_t framReadAddress ) {
   framReadAddress = framReadAddress + ( sizeof( sensorDataRd.itmp2 ));
   sensorDataRd.pressurehPa = fram.read8( framReadAddress );
   framReadAddress = framReadAddress + ( sizeof( sensorDataRd.pressurehPa ));
-  Serial.println(framReadAddress, HEX );
   sensorDataRd.itmp0 = fram.read8( framReadAddress );
   framReadAddress = framReadAddress + ( sizeof( sensorDataRd.itmp0 ));
   Serial.println(framReadAddress, HEX );
@@ -319,23 +320,15 @@ bool hrlyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData &
   sensorDataAvg.pressurehPa = 0;
   sensorDataAvg.itmp0 = 0;
 
-  if( fram.read16( FRAM_ADDR_LAST_HR ) != FRAM_ADDR_FIRST_HR ) {
-    framWriteAddress = fram.read16( FRAM_ADDR_LAST_HR );
-  }
-  else {
-    framWriteAddress = FRAM_ADDR_FIRST_HR;
-  }
-
   for ( byte updates = UPDATES_PER_HOUR; updates > 0; updates-- ) {
     readField( sensorDataRd, framReadAddress );
-    framReadAddress = framReadAddress + sizeof(sensorDataRd);
-    //framWriteAddress = framWriteAddress + sizeof(sensorDataWr);
     sensorDataAvg.humy1 = sensorDataAvg.humy1 + sensorDataRd.humy1;
     sensorDataAvg.itmp1 = sensorDataAvg.itmp1 + sensorDataRd.itmp1;
     sensorDataAvg.humy2 = sensorDataAvg.humy2 + sensorDataRd.humy2;
     sensorDataAvg.itmp2 = sensorDataAvg.itmp2 + sensorDataRd.humy2;
     sensorDataAvg.pressurehPa = sensorDataAvg.pressurehPa + sensorDataRd.humy2;
     sensorDataAvg.itmp0 = sensorDataAvg.itmp0 + sensorDataRd.humy2;
+    framReadAddress = framReadAddress + sizeof(sensorDataRd);
   }
 
   sensorDataAvg.humy1 = sensorDataAvg.humy1 / UPDATES_PER_HOUR;
@@ -352,10 +345,13 @@ bool hrlyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData &
    sensorDataWr.pressurehPa = sensorDataAvg.pressurehPa;
    sensorDataWr.itmp0 = sensorDataAvg.itmp0;
    */
+  Serial.print("in hrly avgs before write: " );
   Serial.println(framWriteAddress, HEX );
   writeField( sensorDataAvg, framWriteAddress );
+  Serial.print("in hrly avgs after writeField: " );
   Serial.println(framWriteAddress, HEX );
   framWriteAddress = framWriteAddress + sizeof(sensorDataAvg);
+  Serial.print("in hrly avgs after framWriteaddress add: " );
   Serial.println(framWriteAddress, HEX );
   fram.write16( FRAM_ADDR_LAST_HR, framWriteAddress );
   //framWriteAddress = FRAM_ADDR_FIRST_QTR;
