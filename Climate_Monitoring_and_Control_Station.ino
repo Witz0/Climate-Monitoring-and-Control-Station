@@ -36,8 +36,8 @@ DHT dht2(DHTPIN_2, DHTTYPE, 6);
 
 Adafruit_FRAM_I2C_Plus fram     = Adafruit_FRAM_I2C_Plus();
 uint16_t          framAddr = 0;
-Timer ioTimer; //instance of Timer for sensor gets
 Timer lcdTimer; //instance of Timer for LCD Backlight Time Out
+Timer ioTimer; //instance of Timer for sensor gets
 
 /* +*-+-----+------+---------+--------+---------+----------+---------+---------+
  Begin Setup of arduino and
@@ -88,92 +88,98 @@ void loop() {
    FRAM storage will need some tracking for eventual overwrite on rollover (pointers) and for readout
    to UI menus
    */
+
   uint8_t buttons = lcd.readButtons();
-  sensorData sensorDataWr;
-  sensorData sensorDataRd;
-  sensorData sensorDataAvg;
-  uint16_t framWriteAddress = FRAM_ADDR_FIRST_QTR;
-  uint16_t framReadAddress;
+
+  static uint16_t framWriteAddress = FRAM_ADDR_FIRST_QTR;
+  static uint16_t framReadAddress = FRAM_ADDR_FIRST_QTR;
+
+  static sensorData sensorDataWr;
+  static sensorData sensorDataRd;
+  static sensorData sensorDataAvg;
+
   static uint8_t dailyIOEvents = 24 * UPDATES_PER_HOUR;
-  unsigned long millisperhour = 3600000;
-  unsigned long ioInterval;    //15 minute I/O update intervals
-  ioInterval = millisperhour / UPDATES_PER_HOUR;
-/*
+  unsigned long ioInterval = 3600000 / UPDATES_PER_HOUR;    //millis per hour / updates per hour
+
   if ( fram.read8( FRAM_ADDR_RESERV_0 ) == true ) {      //check state for reboot
     fram.write8( FRAM_ADDR_RESERV_0, false );
-    if ( sensorioQuarterly( sensorDataWr ) == true ) {
-      writeField( sensorDataWr, framWriteAddress + ( sizeof(sensorDataWr ) * ( UPDATES_PER_HOUR - (dailyIOEvents % UPDATES_PER_HOUR)));    //redo logic similar to funcs
-      Serial.print("dailyIOEvents:  ");
-      Serial.println(dailyIOEvents);
-      dailyIOEvents--;
-      Serial.print("dailyIOEvents:  ");
-      Serial.println(dailyIOEvents);
+    Serial.print("framWriteAddress on reboot(): ");
+    Serial.println(framWriteAddress, HEX );
+    if ( sensorioUpdate( sensorDataWr ) == true ) {
+      writeField( sensorDataWr, framWriteAddress );
       Serial.print("Time = ");
       Serial.print(hour());
       Serial.print(":");
       Serial.print(minute());
       Serial.print(".");
       Serial.println(second());
-      Serial.print("framWriteAddress: ");
+      Serial.print("framWriteAddress first boot post write(): ");
       Serial.println(framWriteAddress, HEX );
-      if ( ( dailyIOEvents ) % UPDATES_PER_HOUR == 0 ) {
-        hrlyavgs( sensorDataWr, sensorDataAvg, sensorDataRd );
-        fram.write16( FRAM_ADDR_LAST_QTR, FRAM_ADDR_FIRST_QTR );    //reset QTR address
-        if ( dailyIOEvents == 0 ) {
-          dailyIOEvents = 24 * UPDATES_PER_HOUR;
-          dailyavgs( sensorDataWr, sensorDataAvg, sensorDataRd );
-          if ( framWriteAddress == 32768 ) {
-            fram.write16( FRAM_ADDR_LAST_DAY, FRAM_ADDR_FIRST_DAY );
-          }
-        }
-      }
+      Serial.print("dailyIOEvents:  ");
+      Serial.println(dailyIOEvents);
+      dailyIOEvents--;
+      Serial.print("dailyIOEvents:  ");
+      Serial.println(dailyIOEvents);
+      Serial.println(" ");
     }
-    framReadAddress = fram.read8( FRAM_ADDR_LAST_QTR );
+    if( fram.read16( FRAM_ADDR_LAST_QTR ) != FRAM_ADDR_FIRST_QTR ) {
+      framReadAddress = fram.read16( FRAM_ADDR_LAST_QTR );
+    }
+    else {
+      framReadAddress = FRAM_ADDR_FIRST_QTR;
+    }
   }
-*/
+
   if ( ioTimer.CheckTimer( ioInterval )) {
-    if ( sensorioQuarterly( sensorDataWr ) == true ) {
-      writeField( sensorDataWr, framWriteAddress + ( sizeof(sensorDataWr ) * ((24 * UPDATES_PER_HOUR) - dailyIOEvents)));    //redo logic similar to funcs
-      Serial.print("dailyIOEvents:  ");
-      Serial.println(dailyIOEvents);
-      dailyIOEvents--;
-      Serial.print("dailyIOEvents:  ");
-      Serial.println(dailyIOEvents);
+    if ( sensorioUpdate( sensorDataWr ) == true ) {
+      if( fram.read16( FRAM_ADDR_LAST_QTR ) != FRAM_ADDR_FIRST_QTR ) {
+        framWriteAddress = fram.read16( FRAM_ADDR_LAST_QTR );
+      }
+      else {
+        framWriteAddress = FRAM_ADDR_FIRST_QTR;
+      }
+      writeField( sensorDataWr, framWriteAddress );    //redo logic similar to funcs
       Serial.print("Time = ");
       Serial.print(hour());
       Serial.print(":");
       Serial.print(minute());
       Serial.print(".");
       Serial.println(second());
-      Serial.print("framWriteAddress: ");
+      Serial.println(" ");
+      Serial.print("framWriteAddress in loop timer: ");
       Serial.println(framWriteAddress, HEX );
-      if ( ( dailyIOEvents ) % UPDATES_PER_HOUR == 0 ) {
+      Serial.println(" ");
+      Serial.print("dailyIOEvents:  ");
+      Serial.println(dailyIOEvents);
+      dailyIOEvents--;
+      Serial.print("dailyIOEvents:  ");
+      Serial.println(dailyIOEvents);
+      Serial.println(" ");
+      if ( dailyIOEvents % UPDATES_PER_HOUR == 0 ) {
         hrlyavgs( sensorDataWr, sensorDataAvg, sensorDataRd );
-        fram.write16( FRAM_ADDR_LAST_QTR, FRAM_ADDR_FIRST_QTR );    //reset QTR address
         if ( dailyIOEvents == 0 ) {
           dailyIOEvents = 24 * UPDATES_PER_HOUR;
           dailyavgs( sensorDataWr, sensorDataAvg, sensorDataRd );
-          if ( framWriteAddress == 32768 ) {
+          if ( framWriteAddress == 32768 ) {    // set this to some lower multiple of sizeof(sensorData) - static reserves & segments
             fram.write16( FRAM_ADDR_LAST_DAY, FRAM_ADDR_FIRST_DAY );
           }
         }
       }
     }
-
-    framReadAddress = FRAM_ADDR_LAST_QTR;
+    if( fram.read16( FRAM_ADDR_LAST_QTR ) != FRAM_ADDR_FIRST_QTR ) {
+      framReadAddress = fram.read16( FRAM_ADDR_LAST_QTR );
+    }
+    else {
+      framReadAddress = FRAM_ADDR_FIRST_QTR;
+    }
   }
 
   if ( buttons ) {
-    Serial.print("framReadAddress in HEX: ");
-    Serial.println(framReadAddress, HEX);
-    Serial.print("framReadAddress data in HEX: ");
-    Serial.println(fram.read16( framReadAddress ), HEX);
-    readField( sensorDataRd, framReadAddress );
+    Serial.println("buttons");
 
-    lcdDrawHome( sensorDataRd, dailyIOEvents );
+    lcdDrawHome( sensorDataWr );
     if ( buttons & BUTTON_SELECT ){
       mainMenu();
-
     }
   }
   lcdTimeOut();
@@ -185,7 +191,8 @@ void loop() {
 
 // Sensor I/O Function gets inputs and writes initial data to FRAM every 15 mins
 
-bool sensorioQuarterly( sensorData &sensorDataWr ) {
+bool sensorioUpdate( sensorData &sensorDataWr ) {
+  Serial.println("SensorioUpdate call: ");
   float tempCon;
   float pressureCon;
 
@@ -205,31 +212,28 @@ bool sensorioQuarterly( sensorData &sensorDataWr ) {
   Serial.println(sensorDataWr.humy1);
   Serial.print("FTemp01: ");
   Serial.println(sensorDataWr.itmp1);
+  Serial.println(" ");
 
   //DHT22 Read Sensor 2
-
   sensorDataWr.humy2 = byte( dht2.readHumidity( ));
   // Read temperature as Fahrenheit
   sensorDataWr.itmp2 = byte( dht2.readTemperature(true));
-
   // Check if any reads failed and exit early (to try again).
   if (isnan(sensorDataWr.humy2) || isnan(sensorDataWr.itmp2)) {
     Serial.println("Failed to read from DHT sensor! 02");
     return false;
   }
-
   Serial.print("Humy02: ");
   Serial.println(sensorDataWr.humy2);
   Serial.print("FTemp02: ");
   Serial.println(sensorDataWr.itmp2);
+  Serial.println(" ");
 
   // MP115A2 Sensor Read
-
   /*Note: conversions to english units and before stores
    C to F (9/5)=1.8 +32 and kPa to hPa
    *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
    */
-
   sensorDataWr.pressurehPa = 0;
   sensorDataWr.itmp0 = 0;
   pressureCon = mpl115a2.getPressure( );
@@ -237,6 +241,7 @@ bool sensorioQuarterly( sensorData &sensorDataWr ) {
 
   Serial.print("Pressure int(): ");
   Serial.println(sensorDataWr.pressurehPa);
+  Serial.println(" ");
 
   tempCon = mpl115a2.getTemperature( );
   tempCon = (( tempCon * 1.8 ) + 32);
@@ -245,6 +250,7 @@ bool sensorioQuarterly( sensorData &sensorDataWr ) {
   Serial.print("Temp0): ");
   Serial.print(sensorDataWr.itmp0);
   Serial.println("F");
+  Serial.println(" ");
 
   return true;
 
@@ -254,67 +260,64 @@ bool sensorioQuarterly( sensorData &sensorDataWr ) {
  framWriteAddress = write/readData( framAddress, sensorDataCopy )
  */
 bool writeField( sensorData &sensorDataWr, uint16_t framWriteAddress ) {
+  Serial.println("writeField() called: ");
+  Serial.println(" ");
 
   Serial.print("sizeof(sensorDataWr): ");
   Serial.println(sizeof(sensorDataWr));
+  Serial.println(" ");
 
   Serial.println("framWriteAdress in writeField(): "); 
   fram.write8( framWriteAddress, sensorDataWr.humy1 );
   Serial.println(framWriteAddress, HEX );
   framWriteAddress = framWriteAddress + ( sizeof( sensorDataWr.humy1 ));
-  Serial.println(framWriteAddress, HEX );
   fram.write8( framWriteAddress, sensorDataWr.itmp1 );
   framWriteAddress = framWriteAddress + ( sizeof( sensorDataWr.itmp1 ));
-  Serial.println(framWriteAddress, HEX );
   fram.write8( framWriteAddress, sensorDataWr.humy2 );
   framWriteAddress = framWriteAddress + ( sizeof( sensorDataWr.humy2 ));
-  Serial.println(framWriteAddress, HEX );
   fram.write8( framWriteAddress, sensorDataWr.itmp2 );
   framWriteAddress = framWriteAddress + ( sizeof( sensorDataWr.itmp2 ));
-  Serial.println(framWriteAddress, HEX );
   fram.write8( framWriteAddress, sensorDataWr.pressurehPa );
   framWriteAddress = framWriteAddress + ( sizeof( sensorDataWr.pressurehPa ));
   Serial.println(framWriteAddress, HEX );
   fram.write8( framWriteAddress, sensorDataWr.itmp0 );
   framWriteAddress = framWriteAddress + ( sizeof( sensorDataWr.itmp0 ));
+  fram.write16( FRAM_ADDR_LAST_QTR, framWriteAddress );
   Serial.println(framWriteAddress, HEX );
-  Serial.println("writeField() called: ");
-
   return true;
 }
 
 bool readField( sensorData &sensorDataRd, uint16_t framReadAddress ) {
+  Serial.println("readField() called: ");
+  Serial.println(" ");
 
-  Serial.println("framReadAdress in writeField(): ");
+  Serial.println("framReadAdress in readField(): ");
   sensorDataRd.humy1 = fram.read8( framReadAddress );
   Serial.println(framReadAddress, HEX );
   framReadAddress = framReadAddress + ( sizeof( sensorDataRd.humy1 ));
-  Serial.println(framReadAddress, HEX );
   sensorDataRd.itmp1 = fram.read8( framReadAddress );
   framReadAddress = framReadAddress + ( sizeof( sensorDataRd.itmp1 ));
-  Serial.println(framReadAddress, HEX );
   sensorDataRd.humy2 = fram.read8( framReadAddress );
   framReadAddress = framReadAddress + ( sizeof( sensorDataRd.humy2 ));
-  Serial.println(framReadAddress, HEX );
   sensorDataRd.itmp2 = fram.read8( framReadAddress );
   framReadAddress = framReadAddress + ( sizeof( sensorDataRd.itmp2 ));
-  Serial.println(framReadAddress, HEX );
   sensorDataRd.pressurehPa = fram.read8( framReadAddress );
   framReadAddress = framReadAddress + ( sizeof( sensorDataRd.pressurehPa ));
   Serial.println(framReadAddress, HEX );
   sensorDataRd.itmp0 = fram.read8( framReadAddress );
   framReadAddress = framReadAddress + ( sizeof( sensorDataRd.itmp0 ));
   Serial.println(framReadAddress, HEX );
-  Serial.println("readField() called: ");
-
   return true;
 }
 
 
 bool hrlyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData &sensorDataRd ) {
+  Serial.println("hrlyavgs() called: ");
+  Serial.println(" ");
 
   Serial.print("sizeof(sensorDataAvg): ");
   Serial.println(sizeof(sensorDataAvg));
+  Serial.println(" ");
 
   uint16_t framReadAddress = FRAM_ADDR_FIRST_QTR;
   uint16_t framWriteAddress;
@@ -358,15 +361,20 @@ bool hrlyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData &
   sensorDataWr.itmp2 = sensorDataAvg.itmp2;
   sensorDataWr.pressurehPa = sensorDataAvg.pressurehPa;
   sensorDataWr.itmp0 = sensorDataAvg.itmp0;
+  Serial.println(framWriteAddress, HEX );
   writeField( sensorDataWr, framWriteAddress );
+  Serial.println(framWriteAddress, HEX );
+  ;
   framWriteAddress = framWriteAddress + sizeof(sensorDataWr);
+  Serial.println(framWriteAddress, HEX );
   fram.write16( FRAM_ADDR_LAST_HR, framWriteAddress );
-  Serial.println("hrlyavgs() called: ");
-
+  framWriteAddress = FRAM_ADDR_FIRST_QTR;
   return true;
 }
 
 bool dailyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData &sensorDataRd ) {
+  Serial.println("dailyavgs() called: ");
+  Serial.println(" ");
   uint16_t framReadAddress = FRAM_ADDR_FIRST_HR;
   uint16_t framWriteAddress;
   sensorDataAvg.humy1 = 0;
@@ -408,48 +416,47 @@ bool dailyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData 
   sensorDataWr.itmp2 = sensorDataAvg.itmp2;
   sensorDataWr.pressurehPa = sensorDataAvg.pressurehPa;
   sensorDataWr.itmp0 = sensorDataAvg.itmp0;
+  Serial.println(framWriteAddress, HEX );
   writeField( sensorDataWr, framWriteAddress );
+  Serial.println(framWriteAddress, HEX );
   framWriteAddress = framWriteAddress + sizeof(sensorDataRd);
+  Serial.println(framWriteAddress, HEX );
   fram.write16( FRAM_ADDR_LAST_DAY, framWriteAddress );
-  Serial.println("dailyavgs() called: ");
-
+  framWriteAddress = FRAM_ADDR_FIRST_QTR;
   return true;
 }
 
-void lcdDrawHome( sensorData &sensorDataRd, uint8_t dailyIOEvents ) {
+void lcdDrawHome( sensorData &sensorDataWr ) {
   lcd.setBacklight(OFF);
   lcd.setBacklight(ON);
   lcd.clear();
   lcd.setCursor(0,0);
-  lcd.print(sensorDataRd.humy1);
+  lcd.print(sensorDataWr.humy1);
   lcd.print("%");
   lcd.setCursor(4,0);
-  lcd.print(sensorDataRd.itmp1);
+  lcd.print(sensorDataWr.itmp1);
   lcd.print("F");
   lcd.setCursor(8,0);
-  lcd.print(sensorDataRd.humy2);
+  lcd.print(sensorDataWr.humy2);
   lcd.print("%");
   lcd.setCursor(12,0);
-  lcd.print(sensorDataRd.itmp2);
+  lcd.print(sensorDataWr.itmp2);
   lcd.print("F");
   lcd.setCursor(0,1);
-  lcd.print(sensorDataRd.pressurehPa);
+  lcd.print(sensorDataWr.pressurehPa);
   lcd.print("P");
   lcd.setCursor(4,1);
-  lcd.print(sensorDataRd.itmp0);
+  lcd.print(sensorDataWr.itmp0);
   lcd.print("F");
   lcd.setCursor(9,1);
   //lcd.print("E");
-  lcd.print(dailyIOEvents);
+  //lcd.print(dailyIOEvents);
   lcd.setCursor(12,1);
   lcd.print("MENU");
   lcd.setCursor(12,1);
   lcd.blink();
   Serial.println("lcdDrawHome() called: ");
-  Serial.print("sensorDataRd.humy2: ");
-  Serial.println(sensorDataRd.humy2);
-  Serial.print("sizeof(sensorDataRd): ");
-  Serial.println(sizeof(sensorDataRd));
+  Serial.println(" ");
 }
 
 //need to do better design maybe menu class with enumerated items maybe try printing enumsfor menu names and use struct for lcd x,y?
@@ -514,8 +521,8 @@ void mainMenu() {
 byte menuItemNav( byte numberItems, byte currentItemNumber ) {
   // must take into account button polling speed and state changes
   uint8_t buttons = lcd.readButtons();
-  byte itemNum = currentItemNumber;
 
+  byte itemNum = currentItemNumber;
   if (buttons & BUTTON_RIGHT ) {
     if (buttons){
       if (itemNum == numberItems ) {
@@ -537,10 +544,13 @@ byte menuItemNav( byte numberItems, byte currentItemNumber ) {
     }
   }
   Serial.println("menuItemNav() called: ");
+  Serial.println(" ");
 }
 
 bool lcdTimeOut() {
+
   uint8_t buttons = lcd.readButtons();
+
   unsigned long lcdInterval = LCD_TIME_OUT;    // seconds to lcd timeout
   if ( !buttons) {
     if ( lcdTimer.CheckTimer( lcdInterval )) {
@@ -597,11 +607,6 @@ void pumpsMenu() {
 void goBack() {
   return;
 }
-
-
-
-
-
 
 
 
