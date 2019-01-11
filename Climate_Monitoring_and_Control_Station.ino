@@ -263,10 +263,6 @@ bool writeField( sensorData &sensorDataWr, uint16_t framWriteAddress ) {
   Serial.println("writeField() called: ");
   Serial.println(" ");
 
-  Serial.print("sizeof(sensorDataWr): ");
-  Serial.println(sizeof(sensorDataWr));
-  Serial.println(" ");
-
   Serial.println("framWriteAdress in writeField(): "); 
   fram.write8( framWriteAddress, sensorDataWr.humy1 );
   Serial.println(framWriteAddress, HEX );
@@ -279,7 +275,6 @@ bool writeField( sensorData &sensorDataWr, uint16_t framWriteAddress ) {
   framWriteAddress = framWriteAddress + ( sizeof( sensorDataWr.itmp2 ));
   fram.write8( framWriteAddress, sensorDataWr.pressurehPa );
   framWriteAddress = framWriteAddress + ( sizeof( sensorDataWr.pressurehPa ));
-  Serial.println(framWriteAddress, HEX );
   fram.write8( framWriteAddress, sensorDataWr.itmp0 );
   framWriteAddress = framWriteAddress + ( sizeof( sensorDataWr.itmp0 ));
   fram.write16( FRAM_ADDR_LAST_QTR, framWriteAddress );
@@ -315,10 +310,6 @@ bool hrlyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData &
   Serial.println("hrlyavgs() called: ");
   Serial.println(" ");
 
-  Serial.print("sizeof(sensorDataAvg): ");
-  Serial.println(sizeof(sensorDataAvg));
-  Serial.println(" ");
-
   uint16_t framReadAddress = FRAM_ADDR_FIRST_QTR;
   uint16_t framWriteAddress;
   sensorDataAvg.humy1 = 0;
@@ -327,8 +318,6 @@ bool hrlyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData &
   sensorDataAvg.itmp2 = 0;
   sensorDataAvg.pressurehPa = 0;
   sensorDataAvg.itmp0 = 0;
-
-
 
   if( fram.read16( FRAM_ADDR_LAST_HR ) != FRAM_ADDR_FIRST_HR ) {
     framWriteAddress = fram.read16( FRAM_ADDR_LAST_HR );
@@ -465,7 +454,7 @@ void mainMenu() {
   uint8_t buttons = lcd.readButtons();
   //if (first run) fix this so menu data is set once to reduce cpu
   byte numItems = 7;
-  byte currentItemNum = 0;
+  static byte mainMenuCurrentItemNum = 0;
 
   lcd.setBacklight(OFF);
   lcd.clear();
@@ -488,10 +477,10 @@ void mainMenu() {
   lcd.blink();
   lcd.setBacklight(ON);
 
-  currentItemNum = menuItemNav( numItems, currentItemNum );
+  mainMenuCurrentItemNum = menuItemNav( numItems, mainMenuCurrentItemNum );
 
   if (buttons & BUTTON_SELECT ) {
-    switch (currentItemNum) {
+    switch (mainMenuCurrentItemNum) {
     case 1:
       nowMenu();
       break;
@@ -515,10 +504,11 @@ void mainMenu() {
       break;
     }
   }
-  Serial.println("mainMenu() called");
 }
 
 byte menuItemNav( byte numberItems, byte currentItemNumber ) {
+  Serial.println("menuItemNav() called: ");
+  Serial.println(" ");
   // must take into account button polling speed and state changes
   uint8_t buttons = lcd.readButtons();
 
@@ -543,8 +533,6 @@ byte menuItemNav( byte numberItems, byte currentItemNumber ) {
       }
     }
   }
-  Serial.println("menuItemNav() called: ");
-  Serial.println(" ");
 }
 
 bool lcdTimeOut() {
@@ -607,6 +595,7 @@ void pumpsMenu() {
 void goBack() {
   return;
 }
+
 
 
 

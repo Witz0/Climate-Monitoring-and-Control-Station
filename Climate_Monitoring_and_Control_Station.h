@@ -3,7 +3,7 @@
 
 #define OFF 0x0 // set the back-light
 #define ON 0x1  //for monochrome LCD
-#define LCD_TIME_OUT 10000   // seconds to lcd timeout
+#define LCD_TIME_OUT 30000   // seconds to lcd timeout
 #define DHTPIN_1 3     //pin DHT22 Sensor 1 is on
 #define DHTPIN_2 4     //pin DHT22 Sensor 2 is on
 #define DHTTYPE DHT22   // DHT 22  (AM2302)
