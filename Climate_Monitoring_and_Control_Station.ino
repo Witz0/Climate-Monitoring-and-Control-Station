@@ -71,7 +71,7 @@ void setup() {
 
   Serial.println("Setup Complete. First I/O incoming....");
   //delay( 250 )
-  //lcd.setBacklight(OFF);
+  lcd.setBacklight(OFF);
 
   fram.write8( FRAM_ADDR_RESERV_0, true );  //set state to true for reboot when setup runs
 }
@@ -173,9 +173,9 @@ void loop() {
       framReadAddress = FRAM_ADDR_FIRST_QTR;
     }
   }
-
+//need to keep states for menus
   if ( buttons ) {
-    Serial.println("buttons");
+    Serial.println("buttons in loop");
 
     lcdDrawHome( sensorDataWr );
     if ( buttons & BUTTON_SELECT ){
@@ -346,12 +346,12 @@ bool hrlyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData &
   sensorDataAvg.itmp0 = sensorDataAvg.itmp0 / UPDATES_PER_HOUR;
   /*
   sensorDataWr.humy1 = sensorDataAvg.humy1;
-  sensorDataWr.itmp1 = sensorDataAvg.itmp1;
-  sensorDataWr.humy2 = sensorDataAvg.humy2;
-  sensorDataWr.itmp2 = sensorDataAvg.itmp2;
-  sensorDataWr.pressurehPa = sensorDataAvg.pressurehPa;
-  sensorDataWr.itmp0 = sensorDataAvg.itmp0;
-  */
+   sensorDataWr.itmp1 = sensorDataAvg.itmp1;
+   sensorDataWr.humy2 = sensorDataAvg.humy2;
+   sensorDataWr.itmp2 = sensorDataAvg.itmp2;
+   sensorDataWr.pressurehPa = sensorDataAvg.pressurehPa;
+   sensorDataWr.itmp0 = sensorDataAvg.itmp0;
+   */
   Serial.println(framWriteAddress, HEX );
   writeField( sensorDataAvg, framWriteAddress );
   Serial.println(framWriteAddress, HEX );
@@ -402,12 +402,12 @@ bool dailyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData 
   sensorDataAvg.itmp0 = sensorDataAvg.itmp0 / 24;
   /*
   sensorDataWr.humy1 = sensorDataAvg.humy1;
-  sensorDataWr.itmp1 = sensorDataAvg.itmp1;
-  sensorDataWr.humy2 = sensorDataAvg.humy2;
-  sensorDataWr.itmp2 = sensorDataAvg.itmp2;
-  sensorDataWr.pressurehPa = sensorDataAvg.pressurehPa;
-  sensorDataWr.itmp0 = sensorDataAvg.itmp0;
-  */
+   sensorDataWr.itmp1 = sensorDataAvg.itmp1;
+   sensorDataWr.humy2 = sensorDataAvg.humy2;
+   sensorDataWr.itmp2 = sensorDataAvg.itmp2;
+   sensorDataWr.pressurehPa = sensorDataAvg.pressurehPa;
+   sensorDataWr.itmp0 = sensorDataAvg.itmp0;
+   */
   Serial.println(framWriteAddress, HEX );
   writeField( sensorDataAvg, framWriteAddress );
   Serial.println(framWriteAddress, HEX );
@@ -418,9 +418,8 @@ bool dailyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData 
   return true;
 }
 
-void lcdDrawHome( sensorData &sensorDataWr ) {
+bool lcdDrawHome( sensorData &sensorDataWr ) {
   lcd.setBacklight(OFF);
-  lcd.setBacklight(ON);
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print(sensorDataWr.humy1);
@@ -447,12 +446,13 @@ void lcdDrawHome( sensorData &sensorDataWr ) {
   lcd.print("MENU");
   lcd.setCursor(12,1);
   lcd.blink();
+  lcd.setBacklight(ON);
   Serial.println("lcdDrawHome() called: ");
   Serial.println(" ");
 }
 
 //need to do better design maybe menu class with enumerated items maybe try printing enumsfor menu names and use struct for lcd x,y?
-void mainMenu() {
+bool mainMenu() {
 
   uint8_t buttons = lcd.readButtons();
   //if (first run) fix this so menu data is set once to reduce cpu
@@ -559,45 +559,51 @@ bool lcdTimeOut() {
   }
 }
 
-void nowMenu() {
+bool nowMenu() {
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("NOW MENU");
-  return;
+  return lcdTimeOut();
 }
-void qtrMenu() {
+
+bool qtrMenu() {
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("QTR MENU");
-  return;
+  return lcdTimeOut();
 }
-void hrsMenu() {
+
+bool hrsMenu() {
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("NOW MENU");
-  return;
+  return lcdTimeOut();
 }
-void dayMenu() {
+
+bool dayMenu() {
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("DAY MENU");
-  return;
+  return lcdTimeOut();
 }
-void fansMenu() {
+bool fansMenu() {
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("FAN MENU");
-  return;
+  return lcdTimeOut();
 }
-void pumpsMenu() {
+
+bool pumpsMenu() {
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("PUMP MENU");
-  return;
+  return lcdTimeOut();
 }
-void goBack() {
-  return;
+
+bool goBack() {
+  return lcdTimeOut();
 }
+
 
 
 
