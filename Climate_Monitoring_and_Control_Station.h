@@ -57,6 +57,7 @@ bool getMplPressure0(sensorData &sensorDataWr);
 bool getMplTemp0(sensorData &sensorDataWr);
 */
 
+uint16_t resetFramAdress( uint16_t framAddress );
 bool sensorioUpdatesensorioUpdate( sensorData &sensorDataWr );
 bool writeField( sensorData &sensorDataWr, uint16_t framWriteAddress );
 bool readField( sensorData &sensorDataRd, uint16_t framReadAddress );
