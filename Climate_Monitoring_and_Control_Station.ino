@@ -38,7 +38,7 @@ Adafruit_FRAM_I2C_Plus fram     = Adafruit_FRAM_I2C_Plus();
 uint16_t          framAddr = 0;
 Timer lcdTimer; //instance of Timer for LCD Backlight Time Out
 Timer ioTimer; //instance of Timer for sensor gets
-
+Timer testTimer;
 /* +*-+-----+------+---------+--------+---------+----------+---------+---------+
  Begin Setup of arduino and
  all sensors and libraries
@@ -107,7 +107,7 @@ void loop() {
     fram.write16(FRAM_ADDR_LAST_PER, FRAM_ADDR_FIRST_PER);
     fram.write16(FRAM_ADDR_LAST_HR, FRAM_ADDR_FIRST_HR);
     fram.write16(FRAM_ADDR_LAST_DAY, FRAM_ADDR_FIRST_DAY);
-    Serial.print("hrlyfram address in last hr: " );
+    Serial.print("fram address in last hr: " );
     Serial.println(fram.read16( FRAM_ADDR_LAST_HR ), HEX );
     if ( sensorioUpdate( sensorDataWr ) == true ) {
       writeField( sensorDataWr, framWriteAddress );
@@ -133,6 +133,10 @@ void loop() {
       framReadAddress = FRAM_ADDR_FIRST_PER;
     }
   }
+  if ( ioTimer.CheckTimer( 30000 )) {
+    Serial.print("from LOOP() fram address in last hr: " );
+    Serial.println(fram.read16( FRAM_ADDR_LAST_HR ), HEX );
+  }
 
   if ( ioTimer.CheckTimer( ioInterval )) {
     if ( sensorioUpdate( sensorDataWr ) == true ) {
@@ -142,6 +146,8 @@ void loop() {
       else {
         framWriteAddress = FRAM_ADDR_FIRST_PER;
       }
+      Serial.print("from update loop fram address in last hr: " );
+      Serial.println(fram.read16( FRAM_ADDR_LAST_HR ), HEX );
       writeField( sensorDataWr, framWriteAddress );    //redo logic similar to funcs
       Serial.print("Time = ");
       Serial.print(hour());
@@ -352,11 +358,7 @@ bool hrlyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData &
     sensorDataAvg.itmp2 = sensorDataAvg.itmp2 + sensorDataRd.humy2;
     sensorDataAvg.pressurehPa = sensorDataAvg.pressurehPa + sensorDataRd.humy2;
     sensorDataAvg.itmp0 = sensorDataAvg.itmp0 + sensorDataRd.humy2;
-    Serial.print("in hrly avgs before sizeof(): " );
-    Serial.println(hrlyframWriteAddress, HEX );
     hrlyframReadAddress = hrlyframReadAddress + sizeof(sensorDataRd);
-    Serial.print("in hrly avgs before sizeof(): " );
-    Serial.println(hrlyframWriteAddress, HEX );
   }
 
   sensorDataAvg.humy1 = sensorDataAvg.humy1 / UPDATES_PER_HOUR;
@@ -373,14 +375,8 @@ bool hrlyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData &
    sensorDataWr.pressurehPa = sensorDataAvg.pressurehPa;
    sensorDataWr.itmp0 = sensorDataAvg.itmp0;
    */
-  Serial.print("in hrly avgs before write: " );
-  Serial.println(hrlyframWriteAddress, HEX );
   writeField( sensorDataAvg, hrlyframWriteAddress );
-  Serial.print("in hrly avgs after writeField: " );
-  Serial.println(hrlyframWriteAddress, HEX );
   hrlyframWriteAddress = hrlyframWriteAddress + sizeof(sensorDataAvg);
-  Serial.print("in hrly avgs after hrlyframWriteaddress add: " );
-  Serial.println(hrlyframWriteAddress, HEX );
   fram.write16( FRAM_ADDR_LAST_HR, hrlyframWriteAddress );
   //hrlyframWriteAddress = FRAM_ADDR_FIRST_PER;
   return true;
@@ -631,6 +627,10 @@ bool pumpsMenu() {
 bool goBack() {
   return lcdTimeOut();
 }
+
+
+
+
 
 
 
