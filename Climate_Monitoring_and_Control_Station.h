@@ -23,11 +23,11 @@
 #define FRAM_ADDR_RESERV_6 0x6
 #define FRAM_ADDR_RESERV_7 0x7
 //Last (most recently) Written Adresses 16bits
-#define FRAM_ADDR_LAST_QTR 0x8
+#define FRAM_ADDR_LAST_PER 0x8
 #define FRAM_ADDR_LAST_HR 0xA
 #define FRAM_ADDR_LAST_DAY 0xC
 //First Adress of FRAM Segments
-#define FRAM_ADDR_FIRST_QTR 0xE    // sizeof(struct) * updates per hour of FRAM for QTR space
+#define FRAM_ADDR_FIRST_PER 0xE    // sizeof(struct) * updates per hour of FRAM for PER space
 #define FRAM_ADDR_FIRST_HR 0x36    // sizeof(struct) * 24 of FRAM for HRS
 #define FRAM_ADDR_FIRST_DAY 0x126    // daily avgs fill the rest until full then reset
 
@@ -65,10 +65,11 @@ bool dailyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData 
 //bool printtoLCD( uint16_t framReadAddress );
 bool lcdDrawHome( sensorData &sensorDataWr, uint8_t dailyIOEvents );
 bool mainMenu();
-byte menuItemNav( byte numItems, byte currentItemNum );
+uint8_t buttonsonce();
+uint8_t menuItemNav( uint8_t numItems, uint8_t currentItemNum );
 bool lcdTimeOut();
 bool nowMenu();
-bool qtrMenu();
+bool perMenu();
 bool hrsMenu();
 bool dayMenu();
 bool fansMenu();

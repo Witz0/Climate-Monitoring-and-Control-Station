@@ -89,22 +89,24 @@ void loop() {
    to UI menus
    */
 
-  uint8_t buttons = lcd.readButtons();
-
-  static uint16_t framWriteAddress = FRAM_ADDR_FIRST_QTR;
-  static uint16_t framReadAddress = FRAM_ADDR_FIRST_QTR;
+  static uint16_t framWriteAddress = FRAM_ADDR_FIRST_PER;
+  static uint16_t framReadAddress = FRAM_ADDR_FIRST_PER;
 
   static sensorData sensorDataWr;
   static sensorData sensorDataRd;
   static sensorData sensorDataAvg;
 
-  static uint8_t dailyIOEvents = 24 * UPDATES_PER_HOUR;
+  static uint8_t dailyIOEvents = (24 * UPDATES_PER_HOUR) -1;
   unsigned long ioInterval = 3600000 / UPDATES_PER_HOUR;    //millis per hour / updates per hour
 
   if ( fram.read8( FRAM_ADDR_RESERV_0 ) == true ) {      //check state for reboot
     fram.write8( FRAM_ADDR_RESERV_0, false );
     Serial.print("framWriteAddress on reboot(): ");
     Serial.println(framWriteAddress, HEX );
+    //hack to reset incorrect fram addresses.
+    fram.write16(FRAM_ADDR_LAST_PER, FRAM_ADDR_FIRST_PER);
+    fram.write16(FRAM_ADDR_LAST_HR, FRAM_ADDR_FIRST_HR);
+    fram.write16(FRAM_ADDR_LAST_DAY, FRAM_ADDR_FIRST_DAY);
     if ( sensorioUpdate( sensorDataWr ) == true ) {
       writeField( sensorDataWr, framWriteAddress );
       Serial.print("Time = ");
@@ -122,21 +124,21 @@ void loop() {
       Serial.println(dailyIOEvents);
       Serial.println(" ");
     }
-    if( fram.read16( FRAM_ADDR_LAST_QTR ) != FRAM_ADDR_FIRST_QTR ) {
-      framReadAddress = fram.read16( FRAM_ADDR_LAST_QTR );
+    if( fram.read16( FRAM_ADDR_LAST_PER ) != FRAM_ADDR_FIRST_PER ) {
+      framReadAddress = fram.read16( FRAM_ADDR_LAST_PER );
     }
     else {
-      framReadAddress = FRAM_ADDR_FIRST_QTR;
+      framReadAddress = FRAM_ADDR_FIRST_PER;
     }
   }
 
   if ( ioTimer.CheckTimer( ioInterval )) {
     if ( sensorioUpdate( sensorDataWr ) == true ) {
-      if( fram.read16( FRAM_ADDR_LAST_QTR ) != FRAM_ADDR_FIRST_QTR ) {
-        framWriteAddress = fram.read16( FRAM_ADDR_LAST_QTR );
+      if( fram.read16( FRAM_ADDR_LAST_PER ) != FRAM_ADDR_FIRST_PER ) {
+        framWriteAddress = fram.read16( FRAM_ADDR_LAST_PER );
       }
       else {
-        framWriteAddress = FRAM_ADDR_FIRST_QTR;
+        framWriteAddress = FRAM_ADDR_FIRST_PER;
       }
       writeField( sensorDataWr, framWriteAddress );    //redo logic similar to funcs
       Serial.print("Time = ");
@@ -160,7 +162,7 @@ void loop() {
         Serial.print("framwrite in loop after hrlyavgs: ");
         Serial.println(framWriteAddress, HEX );
         if ( dailyIOEvents == 0 ) {
-          dailyIOEvents = 24 * UPDATES_PER_HOUR;
+          dailyIOEvents = (24 * UPDATES_PER_HOUR) -1;
           dailyavgs( sensorDataWr, sensorDataAvg, sensorDataRd );
           if ( framWriteAddress == 32768 ) {    // set this to some lower multiple of sizeof(sensorData) - static reserves & segments
             fram.write16( FRAM_ADDR_LAST_DAY, FRAM_ADDR_FIRST_DAY );
@@ -168,19 +170,19 @@ void loop() {
         }
       }
     }
-    if( fram.read16( FRAM_ADDR_LAST_QTR ) != FRAM_ADDR_FIRST_QTR ) {
-      framReadAddress = fram.read16( FRAM_ADDR_LAST_QTR );
+    if( fram.read16( FRAM_ADDR_LAST_PER ) != FRAM_ADDR_FIRST_PER ) {
+      framReadAddress = fram.read16( FRAM_ADDR_LAST_PER );
     }
     else {
-      framReadAddress = FRAM_ADDR_FIRST_QTR;
+      framReadAddress = FRAM_ADDR_FIRST_PER;
     }
   }
-//need to keep states for menus
-  if ( buttons ) {
+  //need to keep states for menus
+  if ( buttonsonce() ) {
     Serial.println("buttons in loop");
 
     lcdDrawHome( sensorDataWr );
-    if ( buttons & BUTTON_SELECT ){
+    if ( buttonsonce() & BUTTON_SELECT ){
       mainMenu();
     }
   }
@@ -279,7 +281,7 @@ bool writeField( sensorData &sensorDataWr, uint16_t framWriteAddress ) {
   framWriteAddress = framWriteAddress + ( sizeof( sensorDataWr.pressurehPa ));
   fram.write8( framWriteAddress, sensorDataWr.itmp0 );
   framWriteAddress = framWriteAddress + ( sizeof( sensorDataWr.itmp0 ));
-  fram.write16( FRAM_ADDR_LAST_QTR, framWriteAddress );
+  fram.write16( FRAM_ADDR_LAST_PER, framWriteAddress );
   Serial.println(framWriteAddress, HEX );
   return true;
 }
@@ -311,8 +313,9 @@ bool hrlyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData &
   Serial.println("hrlyavgs() called: ");
   Serial.println(" ");
 
-  uint16_t framReadAddress = FRAM_ADDR_FIRST_QTR;
+  uint16_t framReadAddress = FRAM_ADDR_FIRST_PER;
   uint16_t framWriteAddress;
+
   sensorDataAvg.humy1 = 0;
   sensorDataAvg.itmp1 = 0;
   sensorDataAvg.humy2 = 0;
@@ -320,7 +323,15 @@ bool hrlyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData &
   sensorDataAvg.pressurehPa = 0;
   sensorDataAvg.itmp0 = 0;
 
-  for ( byte updates = UPDATES_PER_HOUR; updates > 0; updates-- ) {
+  if( fram.read16( FRAM_ADDR_LAST_HR ) != FRAM_ADDR_FIRST_HR ) {
+    framWriteAddress = fram.read16( FRAM_ADDR_LAST_HR );
+  }
+  else {
+    framWriteAddress = FRAM_ADDR_FIRST_HR;
+  }
+
+
+  for ( uint8_t updates = UPDATES_PER_HOUR; updates > 0; updates-- ) {
     readField( sensorDataRd, framReadAddress );
     sensorDataAvg.humy1 = sensorDataAvg.humy1 + sensorDataRd.humy1;
     sensorDataAvg.itmp1 = sensorDataAvg.itmp1 + sensorDataRd.itmp1;
@@ -328,7 +339,11 @@ bool hrlyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData &
     sensorDataAvg.itmp2 = sensorDataAvg.itmp2 + sensorDataRd.humy2;
     sensorDataAvg.pressurehPa = sensorDataAvg.pressurehPa + sensorDataRd.humy2;
     sensorDataAvg.itmp0 = sensorDataAvg.itmp0 + sensorDataRd.humy2;
+    Serial.print("in hrly avgs before sizeof(): " );
+    Serial.println(framWriteAddress, HEX );
     framReadAddress = framReadAddress + sizeof(sensorDataRd);
+    Serial.print("in hrly avgs before sizeof(): " );
+    Serial.println(framWriteAddress, HEX );
   }
 
   sensorDataAvg.humy1 = sensorDataAvg.humy1 / UPDATES_PER_HOUR;
@@ -354,7 +369,7 @@ bool hrlyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData &
   Serial.print("in hrly avgs after framWriteaddress add: " );
   Serial.println(framWriteAddress, HEX );
   fram.write16( FRAM_ADDR_LAST_HR, framWriteAddress );
-  //framWriteAddress = FRAM_ADDR_FIRST_QTR;
+  //framWriteAddress = FRAM_ADDR_FIRST_PER;
   return true;
 }
 
@@ -379,7 +394,7 @@ bool dailyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData 
     framWriteAddress = fram.read16( FRAM_ADDR_FIRST_DAY);
   }
 
-  for ( byte hours = 24; hours > 0; hours-- ) {
+  for ( uint8_t hours = 24; hours > 0; hours-- ) {
     readField( sensorDataRd, framReadAddress );
     framReadAddress = framReadAddress + sizeof(sensorDataRd);
     sensorDataAvg.humy1 = sensorDataAvg.humy1 + sensorDataRd.humy1;
@@ -410,7 +425,7 @@ bool dailyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData 
   framWriteAddress = framWriteAddress + sizeof(sensorDataAvg);
   Serial.println(framWriteAddress, HEX );
   fram.write16( FRAM_ADDR_LAST_DAY, framWriteAddress );
-  //framWriteAddress = FRAM_ADDR_FIRST_QTR;
+  //framWriteAddress = FRAM_ADDR_FIRST_PER;
   return true;
 }
 
@@ -450,17 +465,16 @@ bool lcdDrawHome( sensorData &sensorDataWr ) {
 //need to do better design maybe menu class with enumerated items maybe try printing enumsfor menu names and use struct for lcd x,y?
 bool mainMenu() {
 
-  uint8_t buttons = lcd.readButtons();
   //if (first run) fix this so menu data is set once to reduce cpu
-  byte numItems = 7;
-  static byte mainMenuCurrentItemNum = 0;
+  uint8_t numItems = 7;
+  static uint8_t mainMenuCurrentItemNum = 0;
 
   lcd.setBacklight(OFF);
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("NOW");
   lcd.setCursor(4,0);
-  lcd.print("QTR");
+  lcd.print("PER");
   lcd.setCursor(8,0);
   lcd.print("HRS");
   lcd.setCursor(12,0);
@@ -478,13 +492,13 @@ bool mainMenu() {
 
   mainMenuCurrentItemNum = menuItemNav( numItems, mainMenuCurrentItemNum );
 
-  if (buttons & BUTTON_SELECT ) {
+  if (buttonsonce() & BUTTON_SELECT ) {
     switch (mainMenuCurrentItemNum) {
     case 1:
       nowMenu();
       break;
     case 2:
-      qtrMenu();
+      perMenu();
       break;
     case 3:
       hrsMenu();
@@ -505,15 +519,22 @@ bool mainMenu() {
   }
 }
 
-byte menuItemNav( byte numberItems, byte currentItemNumber ) {
+uint8_t buttonsonce() {
+  static uint8_t oldButtons;
+  uint8_t newButtons = lcd.readButtons();
+  uint8_t buttons = newButtons & ~oldButtons;
+  oldButtons = newButtons;
+  return buttons;
+}
+
+uint8_t menuItemNav( uint8_t numberItems, uint8_t currentItemNumber ) {
   Serial.println("menuItemNav() called: ");
   Serial.println(" ");
   // must take into account button polling speed and state changes
-  uint8_t buttons = lcd.readButtons();
 
-  byte itemNum = currentItemNumber;
-  if (buttons & BUTTON_RIGHT ) {
-    if (buttons){
+  uint8_t itemNum = currentItemNumber;
+  if (buttonsonce() & BUTTON_RIGHT ) {
+    if (buttonsonce()){
       if (itemNum == numberItems ) {
         return itemNum = 0;
       }
@@ -522,8 +543,8 @@ byte menuItemNav( byte numberItems, byte currentItemNumber ) {
       }
     }
   }
-  if (buttons & BUTTON_LEFT ) {
-    if (buttons){
+  if (buttonsonce() & BUTTON_LEFT ) {
+    if (buttonsonce()){
       if (itemNum == 0 ) {
         return itemNum = numberItems;
       }
@@ -536,10 +557,8 @@ byte menuItemNav( byte numberItems, byte currentItemNumber ) {
 
 bool lcdTimeOut() {
 
-  uint8_t buttons = lcd.readButtons();
-
   unsigned long lcdInterval = LCD_TIME_OUT;    // seconds to lcd timeout
-  if ( !buttons) {
+  if ( !buttonsonce()) {
     if ( lcdTimer.CheckTimer( lcdInterval )) {
       lcd.clear();
       lcd.setBacklight(OFF);
@@ -562,10 +581,10 @@ bool nowMenu() {
   return lcdTimeOut();
 }
 
-bool qtrMenu() {
+bool perMenu() {
   lcd.clear();
   lcd.setCursor(0,0);
-  lcd.print("QTR MENU");
+  lcd.print("PER MENU");
   return lcdTimeOut();
 }
 
@@ -599,6 +618,12 @@ bool pumpsMenu() {
 bool goBack() {
   return lcdTimeOut();
 }
+
+
+
+
+
+
 
 
 
