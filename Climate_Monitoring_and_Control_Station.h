@@ -64,7 +64,7 @@ bool readField( sensorData &sensorDataRd, uint16_t framReadAddress );
 bool hrlyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData &sensorDataRd );
 bool dailyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData &sensorDataRd );
 //bool printtoLCD( uint16_t framReadAddress );
-bool lcdDrawHome( sensorData &sensorDataWr, uint8_t dailyIOEvents );
+bool lcdDrawHome( sensorData sensorDataWr, uint8_t dailyIOEvents );
 bool mainMenu();
 uint8_t buttonsonce();
 uint8_t menuItemNav( uint8_t numItems, uint8_t currentItemNum );
@@ -78,5 +78,6 @@ bool pumpsMenu();
 bool goBack();
 
 #endif
+
 
 

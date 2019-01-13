@@ -39,6 +39,7 @@ uint16_t          framAddr = 0;
 Timer lcdTimer; //instance of Timer for LCD Backlight Time Out
 Timer ioTimer; //instance of Timer for sensor gets
 Timer testTimer;
+uint8_t oldButtons;
 /* +*-+-----+------+---------+--------+---------+----------+---------+---------+
  Begin Setup of arduino and
  all sensors and libraries
@@ -74,6 +75,7 @@ void setup() {
   lcd.setBacklight(OFF);
 
   fram.write8( FRAM_ADDR_RESERV_0, true );  //set state to true for reboot when setup runs
+  pinMode(12, OUTPUT);    //Testing FRAM WP
 }
 
 /* +*-+-----+------+---------+--------+---------+----------+---------+---------+
@@ -104,9 +106,12 @@ void loop() {
     Serial.print("framWriteAddress on reboot(): ");
     Serial.println(framWriteAddress, HEX );
     //hack to reset incorrect fram addresses.
+    digitalWrite(12, LOW);
+    delay(100);
     fram.write16(FRAM_ADDR_LAST_PER, FRAM_ADDR_FIRST_PER);
     fram.write16(FRAM_ADDR_LAST_HR, FRAM_ADDR_FIRST_HR);
     fram.write16(FRAM_ADDR_LAST_DAY, FRAM_ADDR_FIRST_DAY);
+    digitalWrite(12, HIGH);
     Serial.print("fram address in last hr: " );
     Serial.println(fram.read16( FRAM_ADDR_LAST_HR ), HEX );
     if ( sensorioUpdate( sensorDataWr ) == true ) {
@@ -176,7 +181,10 @@ void loop() {
           dailyIOEvents = (24 * UPDATES_PER_HOUR) -1;
           dailyavgs( sensorDataWr, sensorDataAvg, sensorDataRd );
           if ( framWriteAddress == 32768 ) {    // set this to some lower multiple of sizeof(sensorData) - static reserves & segments
+            digitalWrite(12, LOW);
+            delay(100);
             fram.write16( FRAM_ADDR_LAST_DAY, FRAM_ADDR_FIRST_DAY );
+            digitalWrite(12, HIGH);
           }
         }
       }
@@ -213,6 +221,7 @@ uint16_t resetFramAddress( uint16_t framAddress ) {
   else {
     framAddress = FRAM_ADDR_FIRST_PER;
   }
+  return framAddress;
 }
 
 bool sensorioUpdate( sensorData &sensorDataWr ) {
@@ -301,7 +310,10 @@ bool writeField( sensorData &sensorDataWr, uint16_t framWriteAddress ) {
   framWriteAddress = framWriteAddress + ( sizeof( sensorDataWr.pressurehPa ));
   fram.write8( framWriteAddress, sensorDataWr.itmp0 );
   framWriteAddress = framWriteAddress + ( sizeof( sensorDataWr.itmp0 ));
+  digitalWrite(12, LOW);
+  delay(100);
   fram.write16( FRAM_ADDR_LAST_PER, framWriteAddress );
+  digitalWrite(12, HIGH);
   Serial.println(framWriteAddress, HEX );
   return true;
 }
@@ -380,7 +392,10 @@ bool hrlyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData &
    */
   writeField( sensorDataAvg, hrlyframWriteAddress );
   hrlyframWriteAddress = hrlyframWriteAddress + sizeof(sensorDataAvg);
+  digitalWrite(12, LOW);
+  delay(100);
   fram.write16( FRAM_ADDR_LAST_HR, hrlyframWriteAddress );
+  digitalWrite(12, HIGH);
   //hrlyframWriteAddress = FRAM_ADDR_FIRST_PER;
   return true;
 }
@@ -397,7 +412,11 @@ bool dailyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData 
   sensorDataAvg.pressurehPa = 0;
   sensorDataAvg.itmp0 = 0;
 
+  digitalWrite(12, LOW);
+  delay(100);
   fram.write16( FRAM_ADDR_LAST_HR, FRAM_ADDR_FIRST_HR );    //resets first address for hourlyavgs function
+  digitalWrite(12, HIGH);
+
 
   if( fram.read16( FRAM_ADDR_LAST_DAY ) != FRAM_ADDR_FIRST_DAY ) {
     dailyframWriteAddress = FRAM_ADDR_LAST_DAY;
@@ -436,12 +455,15 @@ bool dailyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData 
   Serial.println(dailyframWriteAddress, HEX );
   dailyframWriteAddress = dailyframWriteAddress + sizeof(sensorDataAvg);
   Serial.println(dailyframWriteAddress, HEX );
+  digitalWrite(12, LOW);
+  delay(100);
   fram.write16( FRAM_ADDR_LAST_DAY, dailyframWriteAddress );
+  digitalWrite(12, HIGH);
   //framWriteAddress = FRAM_ADDR_FIRST_PER;
   return true;
 }
 
-bool lcdDrawHome( sensorData &sensorDataWr ) {
+bool lcdDrawHome( sensorData sensorDataWr ) {
   lcd.setBacklight(OFF);
   lcd.clear();
   lcd.setCursor(0,0);
@@ -472,6 +494,7 @@ bool lcdDrawHome( sensorData &sensorDataWr ) {
   lcd.setBacklight(ON);
   Serial.println("lcdDrawHome() called: ");
   Serial.println(" ");
+  return true;
 }
 
 //need to do better design maybe menu class with enumerated items maybe try printing enumsfor menu names and use struct for lcd x,y?
@@ -529,14 +552,15 @@ bool mainMenu() {
       break;
     }
   }
+  return true;
 }
 
 uint8_t buttonsonce() {
-  uint8_t buttons = lcd.readButtons();
-  //static uint8_t oldButtons;
-  //uint8_t newButtons = lcd.readButtons();
-  //uint8_t buttons = newButtons & ~oldButtons;
-  //oldButtons = newButtons;
+  //uint8_t buttons = lcd.readButtons();
+  uint8_t newButtons = lcd.readButtons();
+  uint8_t buttons = newButtons & ~oldButtons;
+  oldButtons = newButtons;
+
   return buttons;
 }
 
@@ -566,6 +590,7 @@ uint8_t menuItemNav( uint8_t numberItems, uint8_t currentItemNumber ) {
       }
     }
   }
+  return true;
 }
 
 bool lcdTimeOut() {
@@ -631,19 +656,6 @@ bool pumpsMenu() {
 bool goBack() {
   return lcdTimeOut();
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
