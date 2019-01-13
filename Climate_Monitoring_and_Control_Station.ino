@@ -133,7 +133,7 @@ void loop() {
       framReadAddress = FRAM_ADDR_FIRST_PER;
     }
   }
-  if ( ioTimer.CheckTimer( 30000 )) {
+  if ( testTimer.CheckTimer( 300000 )) {
     Serial.print("from LOOP() fram address in last hr: " );
     Serial.println(fram.read16( FRAM_ADDR_LAST_HR ), HEX );
   }
@@ -149,6 +149,8 @@ void loop() {
       Serial.print("from update loop fram address in last hr: " );
       Serial.println(fram.read16( FRAM_ADDR_LAST_HR ), HEX );
       writeField( sensorDataWr, framWriteAddress );    //redo logic similar to funcs
+      Serial.print("fram address in last hr post writeField: " );
+      Serial.println(fram.read16( FRAM_ADDR_LAST_HR ), HEX );
       Serial.print("Time = ");
       Serial.print(hour());
       Serial.print(":");
@@ -167,6 +169,7 @@ void loop() {
       Serial.println(" ");
       if ( dailyIOEvents % UPDATES_PER_HOUR == 0 ) {
         hrlyavgs( sensorDataWr, sensorDataAvg, sensorDataRd );
+
         Serial.print("framwrite in loop after hrlyavgs: ");
         Serial.println(framWriteAddress, HEX );
         if ( dailyIOEvents == 0 ) {
@@ -529,10 +532,11 @@ bool mainMenu() {
 }
 
 uint8_t buttonsonce() {
-  static uint8_t oldButtons;
-  uint8_t newButtons = lcd.readButtons();
-  uint8_t buttons = newButtons & ~oldButtons;
-  oldButtons = newButtons;
+  uint8_t buttons = lcd.readButtons();
+  //static uint8_t oldButtons;
+  //uint8_t newButtons = lcd.readButtons();
+  //uint8_t buttons = newButtons & ~oldButtons;
+  //oldButtons = newButtons;
   return buttons;
 }
 
@@ -627,6 +631,7 @@ bool pumpsMenu() {
 bool goBack() {
   return lcdTimeOut();
 }
+
 
 
 
