@@ -75,7 +75,7 @@ void setup() {
   lcd.setBacklight(OFF);
 
   fram.write8( FRAM_ADDR_RESERV_0, true );  //set state to true for reboot when setup runs
-  pinMode(12, OUTPUT);    //Testing FRAM WP
+  pinMode(12, OUTPUT);    //Testing FRAM Write Protect
 }
 
 /* +*-+-----+------+---------+--------+---------+----------+---------+---------+
@@ -105,15 +105,17 @@ void loop() {
     fram.write8( FRAM_ADDR_RESERV_0, false );
     Serial.print("framWriteAddress on reboot(): ");
     Serial.println(framWriteAddress, HEX );
+    
     //hack to reset incorrect fram addresses.
     digitalWrite(12, LOW);
-    delay(100);
+    //delay(10);
     fram.write16(FRAM_ADDR_LAST_PER, FRAM_ADDR_FIRST_PER);
     fram.write16(FRAM_ADDR_LAST_HR, FRAM_ADDR_FIRST_HR);
     fram.write16(FRAM_ADDR_LAST_DAY, FRAM_ADDR_FIRST_DAY);
     digitalWrite(12, HIGH);
     Serial.print("fram address in last hr: " );
     Serial.println(fram.read16( FRAM_ADDR_LAST_HR ), HEX );
+
     if ( sensorioUpdate( sensorDataWr ) == true ) {
       writeField( sensorDataWr, framWriteAddress );
       Serial.print("Time = ");
@@ -139,7 +141,7 @@ void loop() {
     }
   }
   if ( testTimer.CheckTimer( 300000 )) {
-    Serial.print("from LOOP() fram address in last hr: " );
+    Serial.print("5 minutes from LOOP() fram address in last hr: " );
     Serial.println(fram.read16( FRAM_ADDR_LAST_HR ), HEX );
   }
 
@@ -182,7 +184,7 @@ void loop() {
           dailyavgs( sensorDataWr, sensorDataAvg, sensorDataRd );
           if ( framWriteAddress == 32768 ) {    // set this to some lower multiple of sizeof(sensorData) - static reserves & segments
             digitalWrite(12, LOW);
-            delay(100);
+            //delay(10);
             fram.write16( FRAM_ADDR_LAST_DAY, FRAM_ADDR_FIRST_DAY );
             digitalWrite(12, HIGH);
           }
@@ -311,7 +313,7 @@ bool writeField( sensorData &sensorDataWr, uint16_t framWriteAddress ) {
   fram.write8( framWriteAddress, sensorDataWr.itmp0 );
   framWriteAddress = framWriteAddress + ( sizeof( sensorDataWr.itmp0 ));
   digitalWrite(12, LOW);
-  delay(100);
+  //delay(10);
   fram.write16( FRAM_ADDR_LAST_PER, framWriteAddress );
   digitalWrite(12, HIGH);
   Serial.println(framWriteAddress, HEX );
@@ -393,7 +395,7 @@ bool hrlyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData &
   writeField( sensorDataAvg, hrlyframWriteAddress );
   hrlyframWriteAddress = hrlyframWriteAddress + sizeof(sensorDataAvg);
   digitalWrite(12, LOW);
-  delay(100);
+  //delay(10);
   fram.write16( FRAM_ADDR_LAST_HR, hrlyframWriteAddress );
   digitalWrite(12, HIGH);
   //hrlyframWriteAddress = FRAM_ADDR_FIRST_PER;
@@ -413,7 +415,7 @@ bool dailyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData 
   sensorDataAvg.itmp0 = 0;
 
   digitalWrite(12, LOW);
-  delay(100);
+  //delay(10);
   fram.write16( FRAM_ADDR_LAST_HR, FRAM_ADDR_FIRST_HR );    //resets first address for hourlyavgs function
   digitalWrite(12, HIGH);
 
@@ -456,7 +458,7 @@ bool dailyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData 
   dailyframWriteAddress = dailyframWriteAddress + sizeof(sensorDataAvg);
   Serial.println(dailyframWriteAddress, HEX );
   digitalWrite(12, LOW);
-  delay(100);
+  //delay(10);
   fram.write16( FRAM_ADDR_LAST_DAY, dailyframWriteAddress );
   digitalWrite(12, HIGH);
   //framWriteAddress = FRAM_ADDR_FIRST_PER;
@@ -497,13 +499,13 @@ bool lcdDrawHome( sensorData sensorDataWr ) {
   return true;
 }
 
-//need to do better design maybe menu class with enumerated items maybe try printing enumsfor menu names and use struct for lcd x,y?
+//enum of menu names could be useful?
+//mainMenu is called from the Home menu after button select of MENU default option.
 bool mainMenu() {
-
-  //if (first run) fix this so menu data is set once to reduce cpu
+  uint8_t mainMenuCurrentItemNum;
+  //if (first run) fix this so menu data is set once to reduce cpu?
   uint8_t numItems = 7;
-  static uint8_t mainMenuCurrentItemNum = 0;
-
+  
   lcd.setBacklight(OFF);
   lcd.clear();
   lcd.setCursor(0,0);
@@ -525,7 +527,7 @@ bool mainMenu() {
   lcd.blink();
   lcd.setBacklight(ON);
 
-  mainMenuCurrentItemNum = menuItemNav( numItems, mainMenuCurrentItemNum );
+  mainMenuCurrentItemNum = menuItemNav( numItems );
 
   if (buttonsonce() & BUTTON_SELECT ) {
     switch (mainMenuCurrentItemNum) {
@@ -556,18 +558,21 @@ bool mainMenu() {
 }
 
 uint8_t buttonsonce() {
-  //uint8_t buttons = lcd.readButtons();
+  uint8_t buttons = lcd.readButtons();
+  /*
   uint8_t newButtons = lcd.readButtons();
   uint8_t buttons = newButtons & ~oldButtons;
   oldButtons = newButtons;
+  */
 
   return buttons;
 }
 
-uint8_t menuItemNav( uint8_t numberItems, uint8_t currentItemNumber ) {
+//pass in number of menu items from current menu and returns item number based on buttons
+uint8_t menuItemNav( uint8_t numberItems ) {
   Serial.println("menuItemNav() called: ");
   Serial.println(" ");
-  // must take into account button polling speed and state changes
+  static uint8_t currentItemNumber = 0;
 
   uint8_t itemNum = currentItemNumber;
   if (buttonsonce() & BUTTON_RIGHT ) {

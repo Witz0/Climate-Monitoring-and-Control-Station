@@ -28,8 +28,8 @@
 #define FRAM_ADDR_LAST_DAY 0xC
 //First Adress of FRAM Segments
 #define FRAM_ADDR_FIRST_PER 0xE    // sizeof(struct) * updates per hour of FRAM for PER space
-#define FRAM_ADDR_FIRST_HR 0x36    // sizeof(struct) * 24 of FRAM for HRS
-#define FRAM_ADDR_FIRST_DAY 0x126    // daily avgs fill the rest until full then reset
+#define FRAM_ADDR_FIRST_HR 0x25    // sizeof(struct) * 24 of FRAM for HRS
+#define FRAM_ADDR_FIRST_DAY 0xB4    // daily avgs fill the rest until full then reset
 
 // custom structures functions declarations and prototypes
 struct sensorData {
@@ -67,7 +67,7 @@ bool dailyavgs( sensorData &sensorDataWr, sensorData &sensorDataAvg, sensorData 
 bool lcdDrawHome( sensorData sensorDataWr, uint8_t dailyIOEvents );
 bool mainMenu();
 uint8_t buttonsonce();
-uint8_t menuItemNav( uint8_t numItems, uint8_t currentItemNum );
+uint8_t menuItemNav( uint8_t numItems );
 bool lcdTimeOut();
 bool nowMenu();
 bool perMenu();
