@@ -39,7 +39,7 @@ uint16_t          framAddr = 0;
 Timer lcdTimer; //instance of Timer for LCD Backlight Time Out
 Timer ioTimer; //instance of Timer for sensor gets
 Timer testTimer;
-uint8_t oldButtons;
+//uint8_t oldButtons;
 /* +*-+-----+------+---------+--------+---------+----------+---------+---------+
  Begin Setup of arduino and
  all sensors and libraries
@@ -558,7 +558,8 @@ bool mainMenu() {
 }
 
 uint8_t buttonsonce() {
-  uint8_t buttons = lcd.readButtons();
+  uint8_t buttons = 0;
+  buttons = lcd.readButtons();
   /*
   uint8_t newButtons = lcd.readButtons();
   uint8_t buttons = newButtons & ~oldButtons;
