@@ -93,6 +93,7 @@ void loop() {
 
   static uint16_t framWriteAddress = FRAM_ADDR_FIRST_PER;
   static uint16_t framReadAddress = FRAM_ADDR_FIRST_PER;
+  static bool menuActive;
 
   sensorData sensorDataWr;
   sensorData sensorDataRd;
@@ -105,7 +106,7 @@ void loop() {
     fram.write8( FRAM_ADDR_RESERV_0, false );
     Serial.print("framWriteAddress on reboot(): ");
     Serial.println(framWriteAddress, HEX );
-    
+
     //hack to reset incorrect fram addresses.
     digitalWrite(12, LOW);
     //delay(10);
@@ -133,11 +134,12 @@ void loop() {
       Serial.println(dailyIOEvents);
       Serial.println(" ");
     }
+
     if( fram.read16( FRAM_ADDR_LAST_PER ) != FRAM_ADDR_FIRST_PER ) {
-      framReadAddress = fram.read16( FRAM_ADDR_LAST_PER );
+      framWriteAddress = fram.read16( FRAM_ADDR_LAST_PER );
     }
     else {
-      framReadAddress = FRAM_ADDR_FIRST_PER;
+      framWriteAddress = FRAM_ADDR_FIRST_PER;
     }
   }
   if ( testTimer.CheckTimer( 300000 )) {
@@ -147,12 +149,14 @@ void loop() {
 
   if ( ioTimer.CheckTimer( ioInterval )) {
     if ( sensorioUpdate( sensorDataWr ) == true ) {
+
       if( fram.read16( FRAM_ADDR_LAST_PER ) != FRAM_ADDR_FIRST_PER ) {
         framWriteAddress = fram.read16( FRAM_ADDR_LAST_PER );
       }
       else {
         framWriteAddress = FRAM_ADDR_FIRST_PER;
       }
+
       Serial.print("from update loop fram address in last hr: " );
       Serial.println(fram.read16( FRAM_ADDR_LAST_HR ), HEX );
       writeField( sensorDataWr, framWriteAddress );    //redo logic similar to funcs
@@ -191,12 +195,7 @@ void loop() {
         }
       }
     }
-    if( fram.read16( FRAM_ADDR_LAST_PER ) != FRAM_ADDR_FIRST_PER ) {
-      framReadAddress = fram.read16( FRAM_ADDR_LAST_PER );
-    }
-    else {
-      framReadAddress = FRAM_ADDR_FIRST_PER;
-    }
+
   }
   //need to keep states for menus
   if ( buttonsonce() ) {
@@ -204,7 +203,7 @@ void loop() {
 
     lcdDrawHome( sensorDataWr );
     if ( buttonsonce() & BUTTON_SELECT ){
-      mainMenu();
+      menuActive = mainMenu();
     }
   }
   lcdTimeOut();
@@ -505,7 +504,7 @@ bool mainMenu() {
   uint8_t mainMenuCurrentItemNum;
   //if (first run) fix this so menu data is set once to reduce cpu?
   uint8_t numItems = 7;
-  
+
   lcd.setBacklight(OFF);
   lcd.clear();
   lcd.setCursor(0,0);
@@ -562,9 +561,9 @@ uint8_t buttonsonce() {
   buttons = lcd.readButtons();
   /*
   uint8_t newButtons = lcd.readButtons();
-  uint8_t buttons = newButtons & ~oldButtons;
-  oldButtons = newButtons;
-  */
+   uint8_t buttons = newButtons & ~oldButtons;
+   oldButtons = newButtons;
+   */
 
   return buttons;
 }
@@ -662,6 +661,9 @@ bool pumpsMenu() {
 bool goBack() {
   return lcdTimeOut();
 }
+
+
+
 
 
 

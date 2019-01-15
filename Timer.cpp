@@ -2,7 +2,6 @@
 
 Timer::Timer() {
 }
-unsigned long Timer::previousMillis = 0;
 
 bool Timer::CheckTimer(unsigned long interval) {
   currentMillis = millis();

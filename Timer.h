@@ -19,7 +19,7 @@ public:
 
 private:
   unsigned long currentMillis;
-  static unsigned long previousMillis;
+  unsigned long previousMillis = 0;
 };
 
 #endif
